@@ -62,9 +62,7 @@ async function applyLoginIdRateLimit(request) {
     request.rawRequest?.ip ||
     request.rawRequest?.headers?.["x-forwarded-for"] ||
     "unknown"
-  )
-    .split(",")[0]
-    .trim();
+  ).split(",")[0].trim();
 
   const bucketId = crypto
     .createHash("sha256")
@@ -72,7 +70,9 @@ async function applyLoginIdRateLimit(request) {
     .digest("hex")
     .slice(0, 32);
 
-  const bucketRef = db.ref(`loginAttemptBuckets/${bucketId}`);
+  const bucketRef = db.ref(
+    `loginAttemptBuckets/${bucketId}`
+  );
 
   const now = Date.now();
   const windowMs = 15 * 60 * 1000;
@@ -106,8 +106,6 @@ async function applyLoginIdRateLimit(request) {
     );
   }
 }
-
-/* Sign in with an Emarni ID and password */
 
 exports.signInWithEmarniId = onCall(async request => {
   const emarniId = String(
@@ -204,8 +202,6 @@ exports.signInWithEmarniId = onCall(async request => {
   return { customToken };
 });
 
-/* Confirm friendship in both accounts */
-
 async function areAcceptedFriends(uidA, uidB) {
   const [a, b] = await Promise.all([
     db.ref(`friendships/${uidA}/${uidB}/status`).get(),
@@ -217,8 +213,6 @@ async function areAcceptedFriends(uidA, uidB) {
     b.val() === "accepted"
   );
 }
-
-/* Create or open a private conversation */
 
 exports.openPrivateChat = onCall(async request => {
   const auth = requireAuth(request);
@@ -276,8 +270,6 @@ exports.openPrivateChat = onCall(async request => {
 
   return { roomId };
 });
-
-/* Create community or business groups */
 
 exports.createChatGroup = onCall(async request => {
   const auth = requireAuth(request);
@@ -397,422 +389,3 @@ exports.createChatGroup = onCall(async request => {
 
   return { groupId };
 });
-
-/* Delete your own message and retain a moderation record */
-
-exports.deleteChatMessage = onCall(async request => {
-  const auth = requireAuth(request);
-  const isAdmin = auth.token.admin === true;
-
-  await ensureNotBanned(auth.uid, isAdmin);
-
-  const data = request.data || {};
-
-  const roomType = String(data.roomType || "");
-  const roomId = String(data.roomId || "");
-  const messageId = String(data.messageId || "");
-
-  if (
-    !messageId ||
-    !["global", "support", "private", "group"].includes(roomType)
-  ) {
-    throw new HttpsError(
-      "invalid-argument",
-      "Invalid message reference."
-    );
-  }
-
-  let messagePath;
-
-  if (roomType === "global" || roomType === "support") {
-    if (roomId !== roomType) {
-      throw new HttpsError("invalid-argument", "Invalid room.");
-    }
-
-    messagePath = `rooms/${roomType}/messages/${messageId}`;
-  } else if (roomType === "private") {
-    if (!roomId) {
-      throw new HttpsError(
-        "invalid-argument",
-        "Invalid private room."
-      );
-    }
-
-    messagePath = `privateRooms/${roomId}/messages/${messageId}`;
-
-    const room = await db
-      .ref(`privateRooms/${roomId}/members`)
-      .get();
-
-    if (!room.child(auth.uid).exists()) {
-      throw new HttpsError(
-        "permission-denied",
-        "You are not a member of this private chat."
-      );
-    }
-  } else {
-    if (!roomId) {
-      throw new HttpsError(
-        "invalid-argument",
-        "Invalid group."
-      );
-    }
-
-    messagePath = `groups/${roomId}/messages/${messageId}`;
-
-    const member = await db
-      .ref(`groups/${roomId}/members/${auth.uid}`)
-      .get();
-
-    if (!member.exists()) {
-      throw new HttpsError(
-        "permission-denied",
-        "You are not a member of this group."
-      );
-    }
-  }
-
-  const messageRef = db.ref(messagePath);
-  const snapshot = await messageRef.get();
-
-  if (!snapshot.exists()) {
-    throw new HttpsError(
-      "not-found",
-      "This message no longer exists."
-    );
-  }
-
-  const message = snapshot.val();
-
-  if (message.deleted === true) {
-    return {
-      deleted: true,
-      alreadyDeleted: true
-    };
-  }
-
-  if (message.uid !== auth.uid) {
-    throw new HttpsError(
-      "permission-denied",
-      "You can delete only your own messages."
-    );
-  }
-
-  const now = Date.now();
-  const archiveRef = db.ref("moderationArchive").push();
-
-  await archiveRef.set({
-    roomType,
-    roomId,
-    messageId,
-    message,
-    deletedBy: auth.uid,
-    deletedAt: now,
-    expiresAt: now + RETENTION_MS
-  });
-
-  await messageRef.update({
-    text: "",
-    deleted: true,
-    deletedAt: now,
-    deletedBy: auth.uid
-  });
-
-  return {
-    deleted: true,
-    archiveExpiresAt: now + RETENTION_MS
-  };
-});
-
-/* Report a message for moderation review */
-
-exports.reportChatMessage = onCall(async request => {
-  const auth = requireAuth(request);
-
-  await ensureNotBanned(
-    auth.uid,
-    auth.token.admin === true
-  );
-
-  const data = request.data || {};
-
-  const roomType = String(data.roomType || "");
-  const roomId = String(data.roomId || "");
-  const messageId = String(data.messageId || "");
-
-  const reason = String(data.reason || "")
-    .trim()
-    .slice(0, 200);
-
-  if (
-    !messageId ||
-    reason.length < 3 ||
-    !["global", "support", "private", "group"].includes(roomType)
-  ) {
-    throw new HttpsError(
-      "invalid-argument",
-      "Choose a message and include a short report reason."
-    );
-  }
-
-  let messagePath;
-
-  if (roomType === "global" || roomType === "support") {
-    if (roomId !== roomType) {
-      throw new HttpsError("invalid-argument", "Invalid room.");
-    }
-
-    messagePath = `rooms/${roomType}/messages/${messageId}`;
-  } else if (roomType === "private") {
-    messagePath = `privateRooms/${roomId}/messages/${messageId}`;
-
-    const member = await db
-      .ref(`privateRooms/${roomId}/members/${auth.uid}`)
-      .get();
-
-    if (!member.exists()) {
-      throw new HttpsError(
-        "permission-denied",
-        "You are not a member of this conversation."
-      );
-    }
-  } else {
-    messagePath = `groups/${roomId}/messages/${messageId}`;
-
-    const member = await db
-      .ref(`groups/${roomId}/members/${auth.uid}`)
-      .get();
-
-    if (!member.exists()) {
-      throw new HttpsError(
-        "permission-denied",
-        "You are not a member of this group."
-      );
-    }
-  }
-
-  const snapshot = await db.ref(messagePath).get();
-
-  if (
-    !snapshot.exists() ||
-    snapshot.child("deleted").val() === true
-  ) {
-    throw new HttpsError(
-      "not-found",
-      "This message is not available for reporting."
-    );
-  }
-
-  const message = snapshot.val();
-
-  if (message.uid === auth.uid) {
-    throw new HttpsError(
-      "failed-precondition",
-      "You cannot report your own message."
-    );
-  }
-
-  const reportId = crypto
-    .createHash("sha256")
-    .update(`${roomType}|${roomId}|${messageId}|${auth.uid}`)
-    .digest("hex");
-
-  const reportRef = db.ref(`moderationReports/${reportId}`);
-  const previous = await reportRef.get();
-
-  if (previous.exists()) {
-    return {
-      reported: true,
-      alreadyReported: true
-    };
-  }
-
-  await reportRef.set({
-    roomType,
-    roomId,
-    messageId,
-    message,
-    reporterUid: auth.uid,
-    reason,
-    status: "open",
-    createdAt: Date.now()
-  });
-
-  return { reported: true };
-});
-
-/* Mark a moderation report as reviewed */
-
-exports.resolveModerationReport = onCall(async request => {
-  const auth = requireAdmin(request);
-
-  const reportId = String(
-    request.data?.reportId || ""
-  );
-
-  if (!/^[a-f0-9]{64}$/.test(reportId)) {
-    throw new HttpsError(
-      "invalid-argument",
-      "Invalid report reference."
-    );
-  }
-
-  const reportRef = db.ref(`moderationReports/${reportId}`);
-  const snapshot = await reportRef.get();
-
-  if (!snapshot.exists()) {
-    throw new HttpsError(
-      "not-found",
-      "This report no longer exists."
-    );
-  }
-
-  await reportRef.update({
-    status: "reviewed",
-    reviewedAt: Date.now(),
-    reviewedBy: auth.uid
-  });
-
-  return {
-    reportId,
-    status: "reviewed"
-  };
-});
-
-/* Ban or restore an account */
-
-exports.setUserBanned = onCall(async request => {
-  const auth = requireAdmin(request);
-
-  const targetUid = String(
-    request.data?.targetUid || ""
-  );
-
-  const shouldBan = Boolean(request.data?.banned);
-
-  if (!targetUid) {
-    throw new HttpsError(
-      "invalid-argument",
-      "Choose a target user."
-    );
-  }
-
-  if (targetUid === auth.uid) {
-    throw new HttpsError(
-      "failed-precondition",
-      "You cannot ban the currently signed-in administrator."
-    );
-  }
-
-  const targetProfile = await db
-    .ref(`users/${targetUid}/profile`)
-    .get();
-
-  if (!targetProfile.exists()) {
-    throw new HttpsError(
-      "not-found",
-      "That user profile was not found."
-    );
-  }
-
-  const banRef = db.ref(`banned/${targetUid}`);
-  const previousBan = await banRef.get();
-
-  if (shouldBan && previousBan.exists()) {
-    return {
-      uid: targetUid,
-      banned: true,
-      alreadyBanned: true
-    };
-  }
-
-  if (!shouldBan && !previousBan.exists()) {
-    return {
-      uid: targetUid,
-      banned: false,
-      alreadyBanned: false
-    };
-  }
-
-  if (shouldBan) {
-    const targetRecord = await admin.auth().getUser(targetUid);
-
-    await admin.auth().updateUser(targetUid, {
-      disabled: true
-    });
-
-    await banRef.set({
-      bannedAt: Date.now(),
-      bannedBy: auth.uid,
-      previouslyDisabled: Boolean(targetRecord.disabled)
-    });
-  } else {
-    const restoreDisabledState = Boolean(
-      previousBan.val()?.previouslyDisabled
-    );
-
-    await admin.auth().updateUser(targetUid, {
-      disabled: restoreDisabledState
-    });
-
-    await banRef.remove();
-  }
-
-  return {
-    uid: targetUid,
-    banned: shouldBan
-  };
-});
-
-/* Automatically remove expired archives and old login-rate records */
-
-exports.purgeExpiredModerationArchive = onSchedule(
-  "every 60 minutes",
-  async () => {
-    const [archiveSnapshot, loginSnapshot] = await Promise.all([
-      db.ref("moderationArchive").get(),
-      db.ref("loginAttemptBuckets").get()
-    ]);
-
-    const now = Date.now();
-
-    if (archiveSnapshot.exists()) {
-      const archiveUpdates = {};
-
-      archiveSnapshot.forEach(child => {
-        const expiresAt = Number(
-          child.child("expiresAt").val() || 0
-        );
-
-        if (expiresAt && expiresAt <= now) {
-          archiveUpdates[child.key] = null;
-        }
-      });
-
-      if (Object.keys(archiveUpdates).length) {
-        await db.ref("moderationArchive").update(archiveUpdates);
-      }
-    }
-
-    if (loginSnapshot.exists()) {
-      const loginUpdates = {};
-
-      loginSnapshot.forEach(child => {
-        const updatedAt = Number(
-          child.child("updatedAt").val() || 0
-        );
-
-        if (
-          !updatedAt ||
-          updatedAt < now - 24 * 60 * 60 * 1000
-        ) {
-          loginUpdates[child.key] = null;
-        }
-      });
-
-      if (Object.keys(loginUpdates).length) {
-        await db.ref("loginAttemptBuckets").update(loginUpdates);
-      }
-    }
-  }
-);
