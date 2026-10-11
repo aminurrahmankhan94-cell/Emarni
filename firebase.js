@@ -1,4 +1,6 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+import {
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
 
 import {
   getAuth,
@@ -37,7 +39,9 @@ import {
   httpsCallable
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-functions.js";
 
-// Firebase project configuration
+// Firebase project configuration.
+// Deploy the matching database and storage rules before using the app.
+
 const firebaseConfig = {
   apiKey: "AIzaSyBbvQfpdM7-WzbYrn2WfygvPS2iRVaEMHY",
   authDomain: "emarni-chat.firebaseapp.com",
@@ -62,7 +66,8 @@ const authCallbacks = new Set();
 
 onAuthStateChanged(auth, async user => {
   if (user?.isAnonymous) {
-    // Require a registered account in this version.
+    // Older versions used anonymous sign-in.
+    // This version requires a registered account.
     await signOut(auth).catch(() => {});
     return;
   }
@@ -150,8 +155,8 @@ export async function signInAccount(login, password) {
       typeof localStorage !== "undefined" &&
       localStorage.getItem("emarni-pending-signup-name")
     ) ||
-      credential.user.displayName ||
-      ""
+    credential.user.displayName ||
+    ""
   );
 
   if (typeof localStorage !== "undefined") {
@@ -170,7 +175,9 @@ function makeEmarniId() {
   let result = "EM";
 
   for (let i = 0; i < 8; i += 1) {
-    result += chars[Math.floor(Math.random() * chars.length)];
+    result += chars[
+      Math.floor(Math.random() * chars.length)
+    ];
   }
 
   return result;
@@ -220,7 +227,10 @@ export async function ensureUserProfile(
     { applyLocally: false }
   );
 
-  if (!transaction.committed || !transaction.snapshot.exists()) {
+  if (
+    !transaction.committed ||
+    !transaction.snapshot.exists()
+  ) {
     throw new Error("Could not initialise your profile.");
   }
 
@@ -328,7 +338,9 @@ export async function saveUserProfile({
 
 export async function uploadAvatar(file) {
   if (!currentUser) {
-    throw new Error("Sign in before uploading a profile photo.");
+    throw new Error(
+      "Sign in before uploading a profile photo."
+    );
   }
 
   if (!file) return "";
@@ -344,7 +356,9 @@ export async function uploadAvatar(file) {
   }
 
   if (file.size > 5 * 1024 * 1024) {
-    throw new Error("Profile photos must be 5 MB or smaller.");
+    throw new Error(
+      "Profile photos must be 5 MB or smaller."
+    );
   }
 
   const extension =
@@ -390,13 +404,21 @@ export function watchIncomingRequests(uid, callback, onError) {
     error => onError?.(error)
   );
 }
+
 export async function sendFriendRequest(recipientUid, profile) {
   if (!currentUser) {
-    throw new Error("Sign in before sending friend requests.");
+    throw new Error(
+      "Sign in before sending friend requests."
+    );
   }
 
-  if (!recipientUid || recipientUid === currentUser.uid) {
-    throw new Error("You cannot send a friend request to yourself.");
+  if (
+    !recipientUid ||
+    recipientUid === currentUser.uid
+  ) {
+    throw new Error(
+      "You cannot send a friend request to yourself."
+    );
   }
 
   const existing = await get(
@@ -421,9 +443,14 @@ export async function sendFriendRequest(recipientUid, profile) {
   });
 }
 
-export async function respondFriendRequest(requesterUid, accept) {
+export async function respondFriendRequest(
+  requesterUid,
+  accept
+) {
   if (!currentUser) {
-    throw new Error("Sign in before responding to requests.");
+    throw new Error(
+      "Sign in before responding to requests."
+    );
   }
 
   const requestRef = ref(
@@ -437,7 +464,9 @@ export async function respondFriendRequest(requesterUid, accept) {
     !requestSnapshot.exists() ||
     requestSnapshot.val()?.status !== "pending"
   ) {
-    throw new Error("This friend request is no longer available.");
+    throw new Error(
+      "This friend request is no longer available."
+    );
   }
 
   await update(requestRef, {
@@ -460,9 +489,7 @@ export async function respondFriendRequest(requesterUid, accept) {
 
 export async function openPrivateChat(otherUid) {
   const fn = httpsCallable(functions, "openPrivateChat");
-
   const result = await fn({ otherUid });
-
   return result.data.roomId;
 }
 
@@ -581,7 +608,9 @@ export async function sendChatMessage(chat, text, profile) {
   }
 
   if (cleanText.length > 1000) {
-    throw new Error("Messages can contain up to 1,000 characters.");
+    throw new Error(
+      "Messages can contain up to 1,000 characters."
+    );
   }
 
   const messagesRef = ref(db, messagePath(chat));
@@ -681,114 +710,4 @@ export async function setUserBan(uid, banned) {
   });
 
   return result.data;
-}
-{
-  "rules": {
-    ".read": false,
-    ".write": false,
-    "users": {
-      "$uid": {
-        "profile": {
-          ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
-          ".write": "auth != null && (auth.uid === $uid || auth.token.admin === true) && (!root.child('banned').child(auth.uid).exists() || auth.token.admin === true)",
-          ".validate": "newData.hasChildren(['uid', 'emarniId', 'displayName']) && newData.child('uid').val() === $uid && newData.child('displayName').isString() && newData.child('displayName').val().length >= 2 && newData.child('displayName').val().length <= 32 && newData.child('emarniId').isString()"
-        }
-      }
-    },
-    "userDirectory": {
-      ".read": "auth != null && (!root.child('banned').child(auth.uid).exists() || auth.token.admin === true)",
-      "$emarniId": {
-        ".write": "auth != null && newData.child('uid').val() === auth.uid && (!data.exists() || data.child('uid').val() === auth.uid) && (!root.child('banned').child(auth.uid).exists() || auth.token.admin === true)",
-        ".validate": "newData.hasChildren(['uid', 'emarniId', 'displayName']) && newData.child('emarniId').val() === $emarniId && newData.child('displayName').isString() && newData.child('displayName').val().length >= 2 && newData.child('displayName').val().length <= 32"
-      }
-    },
-    "friendRequests": {
-      "$recipientUid": {
-        ".read": "auth != null && (auth.uid === $recipientUid || auth.token.admin === true)",
-        "$requesterUid": {
-          ".write": "auth != null && (!root.child('banned').child(auth.uid).exists() || auth.token.admin === true) && ((auth.uid === $requesterUid && (!data.exists() || data.child('status').val() === 'declined') && newData.child('fromUid').val() === auth.uid && newData.child('status').val() === 'pending') || (auth.uid === $recipientUid && data.exists() && newData.child('fromUid').val() === $requesterUid && (newData.child('status').val() === 'accepted' || newData.child('status').val() === 'declined')))",
-          ".validate": "newData.hasChildren(['fromUid', 'fromName', 'status', 'createdAt']) && newData.child('fromUid').val() === $requesterUid && newData.child('fromName').isString() && newData.child('status').isString()"
-        }
-      }
-    },
-    "friendships": {
-      "$uid": {
-        ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
-        "$otherUid": {
-          ".write": "auth != null && (auth.uid === $uid || auth.uid === $otherUid || auth.token.admin === true) && (!root.child('banned').child(auth.uid).exists() || auth.token.admin === true) && newData.child('status').val() === 'accepted' && (root.child('friendRequests').child($uid).child($otherUid).child('status').val() === 'accepted' || root.child('friendRequests').child($otherUid).child($uid).child('status').val() === 'accepted')",
-          ".validate": "newData.hasChildren(['status', 'since']) && newData.child('status').val() === 'accepted'"
-        }
-      }
-    },
-    "userGroups": {
-      "$uid": {
-        ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
-        "$groupId": {
-          ".write": "auth != null && auth.uid === $uid && root.child('groups').child($groupId).child('members').child($uid).exists() && (!root.child('banned').child(auth.uid).exists() || auth.token.admin === true)"
-        }
-      }
-    },
-    "rooms": {
-      "global": {
-        "messages": {
-          ".read": "auth != null && (!root.child('banned').child(auth.uid).exists() || auth.token.admin === true)",
-          "$messageId": {
-            ".write": "auth != null && (!root.child('banned').child(auth.uid).exists() || auth.token.admin === true) && !data.exists() && newData.child('uid').val() === auth.uid",
-            ".validate": "newData.hasChildren(['uid', 'senderName', 'text', 'createdAt']) && newData.child('senderName').isString() && newData.child('senderName').val().length >= 1 && newData.child('senderName').val().length <= 32 && newData.child('text').isString() && newData.child('text').val().length >= 1 && newData.child('text').val().length <= 1000"
-          },
-          ".indexOn": ["createdAt"]
-        }
-      },
-      "support": {
-        "messages": {
-          ".read": "auth != null && (!root.child('banned').child(auth.uid).exists() || auth.token.admin === true)",
-          "$messageId": {
-            ".write": "auth != null && (!root.child('banned').child(auth.uid).exists() || auth.token.admin === true) && !data.exists() && newData.child('uid').val() === auth.uid",
-            ".validate": "newData.hasChildren(['uid', 'senderName', 'text', 'createdAt']) && newData.child('senderName').isString() && newData.child('senderName').val().length >= 1 && newData.child('senderName').val().length <= 32 && newData.child('text').isString() && newData.child('text').val().length >= 1 && newData.child('text').val().length <= 1000"
-          },
-          ".indexOn": ["createdAt"]
-        }
-      }
-    },
-    "privateRooms": {
-      "$roomId": {
-        ".read": "auth != null && (!root.child('banned').child(auth.uid).exists() || auth.token.admin === true) && data.child('members').child(auth.uid).val() === true",
-        "messages": {
-          "$messageId": {
-            ".write": "auth != null && (!root.child('banned').child(auth.uid).exists() || auth.token.admin === true) && root.child('privateRooms').child($roomId).child('members').child(auth.uid).val() === true && !data.exists() && newData.child('uid').val() === auth.uid",
-            ".validate": "newData.hasChildren(['uid', 'senderName', 'text', 'createdAt']) && newData.child('senderName').isString() && newData.child('senderName').val().length >= 1 && newData.child('senderName').val().length <= 32 && newData.child('text').isString() && newData.child('text').val().length >= 1 && newData.child('text').val().length <= 1000"
-          },
-          ".indexOn": ["createdAt"]
-        }
-      }
-    },
-    "groups": {
-      "$groupId": {
-        ".read": "auth != null && (!root.child('banned').child(auth.uid).exists() || auth.token.admin === true) && data.child('members').child(auth.uid).exists()",
-        "messages": {
-          "$messageId": {
-            ".write": "auth != null && (!root.child('banned').child(auth.uid).exists() || auth.token.admin === true) && root.child('groups').child($groupId).child('members').child(auth.uid).exists() && !data.exists() && newData.child('uid').val() === auth.uid",
-            ".validate": "newData.hasChildren(['uid', 'senderName', 'text', 'createdAt']) && newData.child('senderName').isString() && newData.child('senderName').val().length >= 1 && newData.child('senderName').val().length <= 32 && newData.child('text').isString() && newData.child('text').val().length >= 1 && newData.child('text').val().length <= 1000"
-          },
-          ".indexOn": ["createdAt"]
-        }
-      }
-    },
-    "moderationArchive": {
-      ".read": "auth != null && auth.token.admin === true",
-      ".write": false
-    },
-    "banned": {
-      ".read": "auth != null && auth.token.admin === true",
-      ".write": false
-    },
-    "moderationReports": {
-      ".read": "auth != null && auth.token.admin === true",
-      ".write": false
-    },
-    "loginAttemptBuckets": {
-      ".read": false,
-      ".write": false
-    }
-  }
 }
