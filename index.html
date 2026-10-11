@@ -1,144 +1,148 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#f5f0ff" />
-  <meta name="description" content="Emarni — a little place to connect." />
-  <title>Emarni — Let's talk</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#8b5cf6">
+  <title>Emarni — Raflido Studios</title>
+  <link rel="stylesheet" href="./style.css">
 </head>
-
 <body>
-  <div class="app-shell">
+  <section id="loadingScreen" class="loading-screen">
+    <div class="train-track">
+      <div class="train">🚆</div>
+    </div>
+    <h1>Emarni</h1>
+    <p>Raflido Studios</p>
+    <span>Connecting your world...</span>
+  </section>
 
-    <aside class="sidebar" id="sidebar">
-      <a class="brand" href="#" aria-label="Emarni home">
-        <span class="brand-mark">e<span>.</span></span>
-        <span class="brand-name">Emarni</span>
-      </a>
-
-      <div class="profile-card">
-        <div class="avatar avatar-you" id="profileAvatar">Y</div>
-        <div class="profile-info">
-          <strong id="profileName">Your profile</strong>
-          <span><i class="status-dot"></i> Ready to connect</span>
+  <main id="app" class="app hidden">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-icon">E</div>
+        <div>
+          <h1>Emarni</h1>
+          <small>Raflido Studios</small>
         </div>
-        <button class="icon-btn" id="editNameBtn" title="Change your name" aria-label="Change name">✎</button>
       </div>
-
-      <div class="sidebar-heading">
-        <span>MESSAGES</span>
-        <span class="tiny-count">01</span>
+      <div class="user-chip">
+        <span class="online-dot"></span>
+        <span id="headerName">Connecting...</span>
       </div>
+    </header>
 
-      <button class="chat-person active" id="globalChatBtn">
-        <div class="avatar avatar-global">✦</div>
-        <div class="person-info">
-          <strong>Global Lounge</strong>
-          <span id="sidebarPreview">Say hello to everyone</span>
-        </div>
-        <span class="online-ring"></span>
-      </button>
-
-      <div class="sidebar-note">
-        <span class="note-icon">✧</span>
-        <p>A little kindness can make someone's day.</p>
-      </div>
-
-      <div class="sidebar-bottom">
-        <span class="connection-indicator" id="connectionIndicator"></span>
-        <span id="connectionText">Connecting to Emarni…</span>
-      </div>
-    </aside>
-
-    <main class="chat-panel">
-      <header class="chat-header">
-        <button class="icon-btn mobile-menu" id="menuBtn" aria-label="Open menu">☰</button>
-
-        <div class="header-avatar">✦</div>
-        <div class="header-info">
-          <h1>Global Lounge</h1>
-          <p><span class="status-dot"></span> <span id="headerStatus">Connecting…</span></p>
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="welcome">
+          <span>YOUR SPACE</span>
+          <h2>Welcome back! 💜</h2>
+          <p>Connect, chat and grow together.</p>
         </div>
 
-        <div class="header-actions">
-          <button class="icon-btn" id="searchToggle" title="Search messages" aria-label="Search">⌕</button>
-          <button class="icon-btn" id="aboutBtn" title="About Emarni" aria-label="About">ⓘ</button>
+        <button class="nav-btn active" data-view="global">🌍 Global Chat</button>
+        <button class="nav-btn" data-view="profile">👤 My Profile</button>
+        <button class="nav-btn" data-view="friends">💌 Friends</button>
+        <button class="nav-btn" data-view="private">🔒 Private Chat</button>
+        <button class="nav-btn" data-view="groups">👥 Groups</button>
+        <button class="nav-btn" data-view="store">🛍️ Seller Studio</button>
+
+        <div class="profile-mini">
+          <div id="miniAvatar" class="avatar">E</div>
+          <div>
+            <strong id="miniName">Emarni User</strong>
+            <small id="myPublicId">ID loading...</small>
+          </div>
         </div>
-      </header>
+      </aside>
 
-      <div class="search-bar hidden" id="searchBar">
-        <span>⌕</span>
-        <input id="searchInput" type="search" placeholder="Search messages…" autocomplete="off" />
-        <button class="icon-btn" id="closeSearch" aria-label="Close search">×</button>
-      </div>
+      <section class="content">
+        <section id="globalView" class="view">
+          <div class="page-heading">
+            <div>
+              <span class="eyebrow">COMMUNITY</span>
+              <h2>Global Lounge</h2>
+              <p>Talk to everyone in the community.</p>
+            </div>
+            <span class="pill">● Live Chat</span>
+          </div>
 
-      <section class="messages-area" id="messagesArea" aria-label="Chat messages">
-        <div class="welcome-card" id="welcomeCard">
-          <div class="welcome-sparkle">✦</div>
-          <p class="eyebrow">WELCOME TO EMARNI</p>
-          <h2>A little hello<br />goes a long way.</h2>
-          <p class="welcome-copy">This is your cozy corner of the internet.<br />Say hello and make someone's day.</p>
-          <button class="primary-btn" id="sayHelloBtn">Say hello <span>↗</span></button>
-        </div>
+          <div id="messages" class="messages">
+            <p class="empty">Loading messages...</p>
+          </div>
 
-        <div class="date-divider"><span>MESSAGES</span></div>
-        <div id="messagesList" class="messages-list"></div>
-        <div id="emptySearch" class="empty-state hidden">No matching messages found.</div>
+          <form id="messageForm" class="composer">
+            <input id="messageInput" maxlength="1000"
+              placeholder="Write your message..." autocomplete="off" required>
+            <button type="submit">Send ↗</button>
+          </form>
+        </section>
+
+        <section id="profileView" class="view hidden">
+          <div class="page-heading">
+            <div><span class="eyebrow">YOUR IDENTITY</span><h2>My Profile</h2></div>
+          </div>
+          <form id="profileForm" class="panel form-stack">
+            <label>Display name
+              <input id="profileName" minlength="2" maxlength="30" required>
+            </label>
+            <label>Public ID
+              <input id="profileId" disabled>
+            </label>
+            <label>Bio
+              <textarea id="profileBio" maxlength="160"
+                placeholder="Tell people about yourself..."></textarea>
+            </label>
+            <label>Profile image URL
+              <input id="profilePhoto" type="url"
+                placeholder="https://example.com/photo.jpg">
+            </label>
+            <button type="submit">Save Profile</button>
+            <p class="muted">Use a public image URL for now. Private image uploads require Firebase Storage Rules.</p>
+          </form>
+        </section>
+
+        <section id="friendsView" class="view hidden">
+          <div class="page-heading"><div><span class="eyebrow">CONNECTIONS</span><h2>Find Friends</h2></div></div>
+          <form id="friendForm" class="panel inline-form">
+            <input id="friendId" placeholder="Enter public ID" required>
+            <button type="submit">Send Request</button>
+          </form>
+          <h3>Incoming requests</h3>
+          <div id="incomingRequests" class="list-panel"></div>
+          <h3>My friends</h3>
+          <div id="friendList" class="list-panel"></div>
+        </section>
+
+        <section id="privateView" class="view hidden">
+          <div class="page-heading"><div><span class="eyebrow">ONE TO ONE</span><h2>Private Chat</h2></div></div>
+          <div class="panel">
+            <p>Private messaging must be enabled only after server-verified friend acceptance and chat membership.</p>
+            <p class="muted">The secure private-chat backend is not configured by these static files alone.</p>
+          </div>
+        </section>
+
+        <section id="groupsView" class="view hidden">
+          <div class="page-heading"><div><span class="eyebrow">COMMUNITY</span><h2>Groups</h2></div></div>
+          <div class="panel">
+            <p>Group creation and membership need trusted authorization rules before group messages can be enabled.</p>
+            <p class="muted">We will connect this after Firebase rules and membership validation are tested.</p>
+          </div>
+        </section>
+
+        <section id="storeView" class="view hidden">
+          <div class="page-heading"><div><span class="eyebrow">YOUR BUSINESS</span><h2>Seller Studio</h2></div></div>
+          <div class="panel">
+            <p>Seller profiles, product listings and order management are planned for the next stage.</p>
+            <p class="muted">Do not collect customer payments until a trusted backend and payment provider are configured.</p>
+          </div>
+        </section>
       </section>
+    </div>
+    <div id="toast" class="toast hidden" role="status"></div>
+  </main>
 
-      <div class="typing-area hidden" id="typingArea">
-        <span class="typing-dots"><i></i><i></i><i></i></span>
-        <span>Someone is here with you</span>
-      </div>
-
-      <footer class="composer-wrap">
-        <div class="composer">
-          <button class="composer-icon" id="emojiBtn" title="Insert a heart" aria-label="Insert heart">♡</button>
-          <textarea id="messageInput" rows="1" maxlength="1000" placeholder="Write something kind…" aria-label="Write a message"></textarea>
-          <span class="char-count" id="charCount">0/1000</span>
-          <button class="send-btn" id="sendBtn" aria-label="Send message" title="Send message">
-            <span>➤</span>
-          </button>
-        </div>
-        <p class="composer-hint">Press <kbd>Enter</kbd> to send · <kbd>Shift + Enter</kbd> for a new line</p>
-      </footer>
-    </main>
-  </div>
-
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
-
-  <dialog class="modal" id="nameDialog">
-    <form method="dialog" id="nameForm">
-      <div class="modal-symbol">✧</div>
-      <h2>What should we call you?</h2>
-      <p>Choose a display name for the lounge.</p>
-      <label for="nameInput">YOUR NAME</label>
-      <input id="nameInput" maxlength="30" minlength="2" placeholder="e.g. Moonlight" required />
-      <div class="modal-actions">
-        <button class="secondary-btn" value="cancel">Later</button>
-        <button class="primary-btn" id="saveNameBtn" value="save">Save name ↗</button>
-      </div>
-    </form>
-  </dialog>
-
-  <dialog class="modal" id="aboutDialog">
-    <form method="dialog">
-      <div class="modal-symbol">✦</div>
-      <h2>A little about Emarni</h2>
-      <p>Emarni is a cozy place to share kind words and connect with people in the Global Lounge.</p>
-      <p class="privacy-note">Messages in this demo lounge can be visible to everyone who has access. Please don't share passwords, phone numbers, addresses, or other private information.</p>
-      <button class="primary-btn full-btn" value="close">Got it</button>
-    </form>
-  </dialog>
-
-  <script type="module" src="firebase.js"></script>
-  <script type="module" src="app.js"></script>
+  <script type="module" src="./app.js"></script>
 </body>
 </html>
