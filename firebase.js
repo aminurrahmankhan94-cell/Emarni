@@ -18,7 +18,7 @@ import {
 const firebaseConfig = {
   apiKey: "AIzaSyBbvQfpdM7-WzbYrn2WfygvPS2iRVaEMHY",
   authDomain: "emarni-chat.firebaseapp.com",
-  databaseURL: "PASTE_YOUR_REAL_DATABASE_URL_HERE",
+  databaseURL: "https://emarni-chat-default-rtdb.firebaseio.com/",
   projectId: "emarni-chat",
   storageBucket: "emarni-chat.firebasestorage.app",
   messagingSenderId: "787575452024",
