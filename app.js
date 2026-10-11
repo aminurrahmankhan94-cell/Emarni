@@ -53,6 +53,7 @@ const state = {
   messageUnsubscribe: null,
   archiveUnsubscribe: null,
   bannedUnsubscribe: null,
+  reportsUnsubscribe: null,
   toastTimer: null,
   adminTab: "users"
 };
@@ -70,27 +71,38 @@ function showToast(message) {
   const toast = $("toast");
   toast.textContent = message;
   toast.classList.add("show");
+
   clearTimeout(state.toastTimer);
-  state.toastTimer = setTimeout(() => toast.classList.remove("show"), 3600);
+
+  state.toastTimer = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 3600);
 }
 
 function connection(status, label) {
   $("connectionText").textContent = label;
+
   const dot = $("connectionIndicator");
+
   dot.classList.toggle("connected", status === "connected");
   dot.classList.toggle("offline", status === "offline");
 }
 
 function setAuthMode(mode) {
   state.authMode = mode;
+
   const signup = mode === "signup";
 
   $("signupNameWrap").classList.toggle("hidden", !signup);
   $("signupName").required = signup;
-  $("authTitle").textContent = signup ? "Create your account" : "Welcome back";
 
-  $("authLoginLabel").childNodes[0].textContent =
-    signup ? "Email address" : "Emarni ID or email";
+  $("authTitle").textContent = signup
+    ? "Create your account"
+    : "Welcome back";
+
+  $("authLoginLabel").childNodes[0].textContent = signup
+    ? "Email address"
+    : "Emarni ID or email";
 
   $("authEmail").placeholder = signup
     ? "you@example.com"
@@ -143,7 +155,9 @@ function friendlyAuthError(error) {
       "Firebase permissions blocked this action. Deploy the included security rules and check the Firebase setup."
   };
 
-  return messages[code] || error?.message || "Something went wrong. Please try again.";
+  return messages[code] ||
+    error?.message ||
+    "Something went wrong. Please try again.";
 }
 
 function renderAvatar(target, name, photoURL, className = "") {
@@ -155,6 +169,7 @@ function renderAvatar(target, name, photoURL, className = "") {
 
   if (photoURL) {
     const image = el("img");
+
     image.src = photoURL;
     image.alt = `${name || "User"} profile`;
     image.loading = "lazy";
@@ -162,7 +177,9 @@ function renderAvatar(target, name, photoURL, className = "") {
 
     image.onerror = () => {
       target.replaceChildren(
-        document.createTextNode((name || "E").charAt(0).toUpperCase())
+        document.createTextNode(
+          (name || "E").charAt(0).toUpperCase()
+        )
       );
     };
 
@@ -176,7 +193,8 @@ function renderAvatar(target, name, photoURL, className = "") {
 function updateProfileUI() {
   const profile = state.profile || {};
 
-  $("profileName").textContent = profile.displayName || "Your profile";
+  $("profileName").textContent =
+    profile.displayName || "Your profile";
 
   $("profileEmarniId").textContent = profile.emarniId
     ? `@${profile.emarniId}`
@@ -199,7 +217,8 @@ function updateProfileUI() {
 
 function updateRequestCount() {
   const count = Object.values(state.requests || {})
-    .filter(request => request?.status === "pending").length;
+    .filter(request => request?.status === "pending")
+    .length;
 
   $("requestCount").textContent = String(count);
   $("requestCount").classList.toggle("hidden", count < 1);
@@ -213,10 +232,14 @@ function publicProfileByUid(uid) {
 function sortedFriends() {
   return Object.entries(state.friendships || {})
     .filter(([, value]) => value?.status === "accepted")
-    .map(([uid]) => ({ uid, profile: publicProfileByUid(uid) }))
+    .map(([uid]) => ({
+      uid,
+      profile: publicProfileByUid(uid)
+    }))
     .filter(entry => Boolean(entry.profile))
     .sort((a, b) =>
-      (a.profile.displayName || "").localeCompare(b.profile.displayName || "")
+      (a.profile.displayName || "")
+        .localeCompare(b.profile.displayName || "")
     );
 }
 
@@ -263,10 +286,15 @@ function changeView(view) {
 
   $("sidebar").classList.remove("open");
 
-  if (view === "discover") renderDiscoverPanel();
-  else if (view === "requests") renderRequestsPanel();
-  else if (view === "friends") renderFriendsPanel();
-  else renderDiscoverPanel();
+  if (view === "discover") {
+    renderDiscoverPanel();
+  } else if (view === "requests") {
+    renderRequestsPanel();
+  } else if (view === "friends") {
+    renderFriendsPanel();
+  } else {
+    renderDiscoverPanel();
+  }
 }
 
 function activateChat(chat) {
@@ -286,6 +314,7 @@ function activateChat(chat) {
   $("chatSearchInput").value = "";
 
   $("viewTitle").textContent = chat.title;
+
   $("viewSubtitle").textContent =
     chat.subtitle || "A place to share thoughtful messages.";
 
@@ -293,7 +322,11 @@ function activateChat(chat) {
     chat.type === "private"
       ? "PRIVATE CONVERSATION"
       : chat.type === "group"
-      ? (chat.groupType === "business" ? "BUSINESS GROUP" : "GROUP CONVERSATION")
+      ? (
+          chat.groupType === "business"
+            ? "BUSINESS GROUP"
+            : "GROUP CONVERSATION"
+        )
       : chat.type === "support"
       ? "COMMUNITY SUPPORT"
       : "COMMUNITY CHAT";
@@ -302,7 +335,11 @@ function activateChat(chat) {
     chat.type === "private"
       ? "FRIENDS ONLY"
       : chat.type === "group"
-      ? (chat.groupType === "business" ? "BUSINESS GROUP" : "GROUP CHAT")
+      ? (
+          chat.groupType === "business"
+            ? "BUSINESS GROUP"
+            : "GROUP CHAT"
+        )
       : chat.type === "support"
       ? "SUPPORT LOUNGE"
       : "PUBLIC ROOM";
@@ -346,11 +383,15 @@ function activateChat(chat) {
     $("welcomeBanner").querySelector(".eyebrow").textContent =
       "A LITTLE KINDNESS MATTERS";
 
-    $("welcomeHelloBtn").firstChild.textContent = "Join the conversation ";
+    $("welcomeHelloBtn").firstChild.textContent =
+      "Join the conversation ";
   }
 
   document.querySelectorAll(".nav-item").forEach(button => {
-    button.classList.toggle("active", button.dataset.view === chat.type);
+    button.classList.toggle(
+      "active",
+      button.dataset.view === chat.type
+    );
   });
 
   document.querySelectorAll(".group-nav-item").forEach(button => {
@@ -361,6 +402,7 @@ function activateChat(chat) {
   });
 
   $("sidebar").classList.remove("open");
+
   renderMessages();
   connection("connecting", "Opening conversation");
 
@@ -370,7 +412,10 @@ function activateChat(chat) {
       state.messages = messages;
 
       if (["global", "support"].includes(chat.type)) {
-        $("welcomeBanner").classList.toggle("hidden", messages.length > 0);
+        $("welcomeBanner").classList.toggle(
+          "hidden",
+          messages.length > 0
+        );
       }
 
       renderMessages();
@@ -399,12 +444,12 @@ function formatTime(value) {
     minute: "2-digit"
   }).format(date);
 }
-
 function createMessageRow(message) {
   const mine = Boolean(state.user && message.uid === state.user.uid);
   const row = el("article", `message-row${mine ? " mine" : ""}`);
   const avatar = el("div", "message-avatar");
-    renderAvatar(
+
+  renderAvatar(
     avatar,
     message.senderName || "User",
     message.senderPhotoURL || "",
@@ -431,7 +476,12 @@ function createMessageRow(message) {
     const actions = el("div", "message-actions");
 
     if (mine) {
-      const removeButton = el("button", "message-action", "Delete message");
+      const removeButton = el(
+        "button",
+        "message-action",
+        "Delete message"
+      );
+
       removeButton.type = "button";
 
       removeButton.addEventListener("click", async () => {
@@ -528,14 +578,6 @@ function renderMessages() {
   );
 
   $("messagesArea").scrollTop = $("messagesArea").scrollHeight;
-
-  if (state.activeChat.type === "global" && state.messages.length) {
-    const latest = state.messages[state.messages.length - 1];
-
-    if (!latest.deleted) {
-      // The preview is intentionally private to the current signed-in session.
-    }
-  }
 }
 
 function updateCharacterCount() {
@@ -826,9 +868,8 @@ async function startDirectChat(uid, displayName) {
     showToast(friendlyAuthError(error));
   }
 }
-
 function renderFriendsPanel() {
-    const panel = $("contentPanel");
+  const panel = $("contentPanel");
 
   panel.replaceChildren(
     panelHeading(
@@ -877,6 +918,7 @@ function renderFriendsPanel() {
 
     const action = el("button", "small-btn", "Message");
     action.type = "button";
+
     action.addEventListener("click", () =>
       startDirectChat(uid, profile.displayName)
     );
@@ -901,7 +943,8 @@ function renderGroupList() {
     const button = el(
       "button",
       `group-nav-item${
-        state.activeChat.type === "group" && state.activeChat.id === group.id
+        state.activeChat.type === "group" &&
+        state.activeChat.id === group.id
           ? " active"
           : ""
       }`
@@ -983,7 +1026,9 @@ async function handleCreateGroup(event) {
   }
 
   const memberUids = [
-    ...document.querySelectorAll('input[name="groupMember"]:checked')
+    ...document.querySelectorAll(
+      'input[name="groupMember"]:checked'
+    )
   ].map(input => input.value);
 
   const type = $("groupType").value;
@@ -999,7 +1044,10 @@ async function handleCreateGroup(event) {
     }
   }
 
-  const submit = $("groupForm").querySelector('button[type="submit"]');
+  const submit = $("groupForm").querySelector(
+    'button[type="submit"]'
+  );
+
   submit.disabled = true;
 
   try {
@@ -1008,7 +1056,9 @@ async function handleCreateGroup(event) {
       type,
       description: $("groupAbout").value.trim(),
       companyName:
-        type === "business" ? $("businessName").value.trim() : "",
+        type === "business"
+          ? $("businessName").value.trim()
+          : "",
       website: type === "business" ? website : "",
       memberUids
     });
@@ -1070,7 +1120,10 @@ async function handleProfileSave(event) {
     );
   }
 
-  const submit = $("profileForm").querySelector('button[type="submit"]');
+  const submit = $("profileForm").querySelector(
+    'button[type="submit"]'
+  );
+
   submit.disabled = true;
 
   try {
@@ -1189,6 +1242,7 @@ function renderAdminUsers() {
     target.appendChild(row);
   });
 }
+
 function renderAdminArchive() {
   const target = $("adminDeletedList");
   target.replaceChildren();
@@ -1240,7 +1294,7 @@ function renderAdminArchive() {
     const detail = el(
       "p",
       "field-help",
-      `Sender UID: ${item.message?.uid || "unknown"} · Message ID: ${item.messageId || item.id || item.id}`
+      `Sender UID: ${item.message?.uid || "unknown"} · Message ID: ${item.messageId || item.id}`
     );
 
     row.appendChild(detail);
@@ -1316,9 +1370,9 @@ function renderAdminReports() {
           );
         }
 
-        if (!window.confirm("Ban the user who sent this reported message?")) {
-          return;
-        }
+        if (!window.confirm(
+          "Ban the user who sent this reported message?"
+        )) return;
 
         ban.disabled = true;
 
@@ -1331,7 +1385,12 @@ function renderAdminReports() {
         }
       });
 
-      const review = el("button", "small-btn neutral", "Mark reviewed");
+      const review = el(
+        "button",
+        "small-btn neutral",
+        "Mark reviewed"
+      );
+
       review.type = "button";
 
       review.addEventListener("click", async () => {
@@ -1418,7 +1477,6 @@ function openAdminConsole() {
 
   $("adminDialog").showModal();
 }
-
 function unsubscribeAll() {
   state.unsubscribers.forEach(unsubscribe => {
     try {
@@ -1430,10 +1488,7 @@ function unsubscribeAll() {
 
   state.unsubscribers = [];
 
-  if (state.messageUnsubscribe) {
-    state.messageUnsubscribe();
-  }
-
+  if (state.messageUnsubscribe) state.messageUnsubscribe();
   state.messageUnsubscribe = null;
 
   if (state.archiveUnsubscribe) state.archiveUnsubscribe();
@@ -1454,7 +1509,10 @@ async function enterApp(user) {
   connection("connecting", "Loading your account");
 
   try {
-    state.profile = await ensureUserProfile(user, user.displayName || "");
+    state.profile = await ensureUserProfile(
+      user,
+      user.displayName || ""
+    );
 
     state.isAdmin = await checkAdminRole(user).catch(() => false);
 
@@ -1570,7 +1628,9 @@ function leaveApp() {
 // Authentication controls
 
 $("authSwitch").addEventListener("click", () => {
-  setAuthMode(state.authMode === "signin" ? "signup" : "signin");
+  setAuthMode(
+    state.authMode === "signin" ? "signup" : "signin"
+  );
 });
 
 $("authForm").addEventListener("submit", async event => {
@@ -1586,11 +1646,15 @@ $("authForm").addEventListener("submit", async event => {
   try {
     if (state.authMode === "signup") {
       if (displayName.length < 2) {
-        throw new Error("Choose a display name with at least 2 characters.");
+        throw new Error(
+          "Choose a display name with at least 2 characters."
+        );
       }
 
       if (password.length < 8) {
-        throw new Error("Choose a password with at least 8 characters.");
+        throw new Error(
+          "Choose a password with at least 8 characters."
+        );
       }
 
       await registerAccount({ email, password, displayName });
@@ -1618,7 +1682,9 @@ $("signOutBtn").addEventListener("click", async () => {
 // Navigation and conversation controls
 
 document.querySelectorAll(".nav-item").forEach(button => {
-  button.addEventListener("click", () => changeView(button.dataset.view));
+  button.addEventListener("click", () =>
+    changeView(button.dataset.view)
+  );
 });
 
 $("menuBtn").addEventListener("click", () =>
@@ -1629,7 +1695,10 @@ $("closeSidebar").addEventListener("click", () =>
   $("sidebar").classList.remove("open")
 );
 
-$("createGroupBtn").addEventListener("click", openCreateGroupDialog);
+$("createGroupBtn").addEventListener(
+  "click",
+  openCreateGroupDialog
+);
 
 $("groupType").addEventListener("change", () => {
   $("businessGroupFields").classList.toggle(
@@ -1639,8 +1708,16 @@ $("groupType").addEventListener("change", () => {
 });
 
 $("groupForm").addEventListener("submit", handleCreateGroup);
-$("composerForm").addEventListener("submit", sendCurrentMessage);
-$("messageInput").addEventListener("input", updateCharacterCount);
+
+$("composerForm").addEventListener(
+  "submit",
+  sendCurrentMessage
+);
+
+$("messageInput").addEventListener(
+  "input",
+  updateCharacterCount
+);
 
 $("messageInput").addEventListener("keydown", event => {
   if (
@@ -1716,6 +1793,7 @@ $("aboutHeaderBtn").addEventListener("click", () =>
 );
 
 $("adminOpenBtn").addEventListener("click", openAdminConsole);
+
 $("adminUserSearch").addEventListener("input", renderAdminUsers);
 
 document.querySelectorAll(".admin-tab").forEach(button => {
@@ -1746,19 +1824,40 @@ $("adminDialog").addEventListener("close", () => {
     state.reportsUnsubscribe = null;
 });
 
-// Keep the branded loading screen visible briefly, then initialise auth state.
+// Start Emarni after Firebase authentication resolves.
 
 const bootStart = Date.now();
 
 watchAuth(async user => {
-  await sleep(Math.max(0, 650 - (Date.now() - bootStart)));
+  try {
+    await sleep(Math.max(0, 650 - (Date.now() - bootStart)));
 
-  $("splashScreen").classList.add("fade-out");
+    $("splashScreen")?.classList.add("fade-out");
 
-  if (user) {
-    await enterApp(user);
-  } else {
-    leaveApp();
+    if (user) {
+      await enterApp(user);
+    } else {
+      leaveApp();
+    }
+  } catch (error) {
+    console.error("Emarni could not initialise:", error);
+
+    $("splashScreen")?.classList.add("fade-out");
+    $("appLayout")?.classList.add("hidden");
+    $("authScreen")?.classList.remove("hidden");
+
+    const subtitle = $("authSubtitle");
+
+    if (subtitle) {
+      subtitle.textContent =
+        "Emarni could not initialise your account. Check Firebase Authentication and Realtime Database rules, then reload.";
+    }
+
+    showToast(friendlyAuthError(error));
+  } finally {
+    window.dispatchEvent(
+      new Event("emarni-startup-complete")
+    );
   }
 });
 
