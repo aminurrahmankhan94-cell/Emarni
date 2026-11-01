@@ -1,6 +1,6 @@
 // Pet adoption (free adoption only) and paid ads with admin approval.
 import * as fb from "./firebase.js";
-import { $, $$, esc, toast, busy, errMsg, timeAgo, LIMIT_MB, openDialog, avatarHTML } from "./ui.js";
+import { $, $$, esc, toast, busy, errMsg, timeAgo, LIMIT_MB, openDialog, avatarHTML, shrinkImage } from "./ui.js";
 import { icon, petArt } from "./icons.js";
 
 // Replace these numbers with your real payment details before you go live.
@@ -17,7 +17,8 @@ let pets = [];
 let petFilter = "All";
 let activeAds = [];
 let myAds = [];
-let pendingAds = [];
+let adminReqs = [];
+let adminAds = [];
 let petPhotoFile = null;
 let adoptTarget = null;
 let unsubRequests = null;
@@ -39,7 +40,11 @@ export function initMarket(context) {
   if (ctx.isAdmin()) {
     $("#adminAdsWrap").classList.remove("hidden");
     fb.watchAllAdRequests(list => {
-      pendingAds = list.filter(req => req.status === "pending");
+      adminReqs = list;
+      renderAdminAds();
+    }, err => toast(errMsg(err)));
+    fb.watchAllAds(list => {
+      adminAds = list;
       renderAdminAds();
     }, err => toast(errMsg(err)));
   }
@@ -117,7 +122,7 @@ async function savePet(event) {
   try {
     let photo = null;
     if (petPhotoFile) {
-      photo = await fb.uploadFile(`adoptions/${ctx.me().uid}`, petPhotoFile);
+      photo = await fb.uploadFile(`adoptions/${ctx.me().uid}`, await shrinkImage(petPhotoFile, 1000));
     }
     await fb.createAdoption({
       name,
@@ -234,19 +239,54 @@ function renderMyAds() {
     : `<li class="none">You have not sent any ad requests yet.</li>`;
 }
 
+function pendingRow(req) {
+  return `<li class="item">
+    <div class="grow"><b>${esc(req.title)}</b><small>${esc(req.days)} day(s) · BDT ${esc(req.amount)} · ${esc(req.payMethod)} · TxnID ${esc(req.txnId)}</small></div>
+    <button class="btn sm" type="button" data-ad="approve" data-id="${esc(req.aid)}">Approve</button>
+    <button class="btn sm danger" type="button" data-ad="reject" data-id="${esc(req.aid)}">Reject</button>
+  </li>`;
+}
+
+function liveRow(ad, now) {
+  const expired = Number(ad.expiresAt) <= now;
+  const [label, tone] = expired ? ["Expired", "gray"] : ad.paused ? ["Paused", "amber"] : ["Live", "green"];
+  const left = expired ? "" : `${Math.max(1, Math.ceil((Number(ad.expiresAt) - now) / 86400000))} day(s) left · `;
+  const toggle = expired
+    ? ""
+    : ad.paused
+      ? `<button class="btn sm ghost" type="button" data-ad="resume" data-id="${esc(ad.id)}">Resume</button>`
+      : `<button class="btn sm ghost" type="button" data-ad="pause" data-id="${esc(ad.id)}">Pause</button>`;
+  return `<li class="item">
+    <div class="grow"><b>${esc(ad.title)}</b><small>${left}${esc(ad.category || "Other")}</small></div>
+    <span class="pill ${tone}">${label}</span>
+    ${toggle}
+    <button class="btn sm ghost" type="button" data-ad="extend" data-id="${esc(ad.id)}">+7 days</button>
+    <button class="btn sm danger" type="button" data-ad="remove" data-id="${esc(ad.id)}" data-uid="${esc(ad.uid)}">Remove</button>
+  </li>`;
+}
+
 function renderAdminAds() {
-  $("#adminAds").innerHTML = pendingAds.length
-    ? pendingAds
-        .map(req => `<li class="item">
-          <div class="grow">
-            <b>${esc(req.title)}</b>
-            <small>${esc(req.days)} day(s) · BDT ${esc(req.amount)} · ${esc(req.payMethod)} · TxnID ${esc(req.txnId)}</small>
-          </div>
-          <button class="btn sm" type="button" data-ad="approve" data-id="${esc(req.aid)}" data-uid="${esc(req.uid)}">Approve</button>
-          <button class="btn sm danger" type="button" data-ad="reject" data-id="${esc(req.aid)}" data-uid="${esc(req.uid)}">Reject</button>
-        </li>`)
-        .join("")
-    : `<li class="none">No ads waiting for approval.</li>`;
+  const now = Date.now();
+  const approved = adminReqs.filter(r => r.status === "active");
+  const waiting = adminReqs.filter(r => r.status === "pending");
+  const revenue = approved.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+  const byMethod = {};
+  approved.forEach(r => {
+    byMethod[r.payMethod] = (byMethod[r.payMethod] || 0) + (Number(r.amount) || 0);
+  });
+  const methods = Object.entries(byMethod).map(([m, v]) => `${esc(m)}: BDT ${v}`).join(" · ") || "No approved payments yet";
+  const liveNow = adminAds.filter(ad => Number(ad.expiresAt) > now && ad.paused !== true).length;
+  $("#adminAds").innerHTML = `
+    <div class="stat-grid">
+      <div class="stat"><span>Revenue (approved)</span><b>BDT ${revenue}</b></div>
+      <div class="stat"><span>Waiting</span><b>${waiting.length}</b></div>
+      <div class="stat"><span>Live now</span><b>${liveNow}</b></div>
+      <div class="stat wide"><span>By payment method</span><small>${methods}</small></div>
+    </div>
+    <h3 class="sub">Waiting for approval</h3>
+    <ul class="list plain">${waiting.length ? waiting.map(pendingRow).join("") : `<li class="none">Nothing waiting.</li>`}</ul>
+    <h3 class="sub">All ads</h3>
+    <ul class="list plain">${adminAds.length ? adminAds.map(ad => liveRow(ad, now)).join("") : `<li class="none">No ads yet.</li>`}</ul>`;
 }
 
 function updatePayInfo() {
@@ -274,7 +314,7 @@ async function saveAd(event) {
     if (image) {
       if (!image.type.startsWith("image/")) throw new Error("Ad image must be a picture");
       if (image.size > LIMIT_MB.ad * 1048576) throw new Error(`Ad image must be under ${LIMIT_MB.ad} MB`);
-      upload = await fb.uploadFile(`ads/${ctx.me().uid}`, image);
+      upload = await fb.uploadFile(`ads/${ctx.me().uid}`, await shrinkImage(image, 1000));
     }
     await fb.createAdRequest({
       title,
@@ -298,13 +338,28 @@ async function saveAd(event) {
 }
 
 async function decideAdFromButton(btn) {
-  const req = pendingAds.find(item => item.aid === btn.dataset.id);
-  if (!req) return;
-  const approve = btn.dataset.ad === "approve";
-  if (!approve && !confirm("Reject this ad request?")) return;
+  const action = btn.dataset.ad;
+  const id = btn.dataset.id;
   try {
-    await fb.decideAd(req, approve);
-    toast(approve ? "Ad approved and live" : "Ad rejected");
+    if (action === "approve" || action === "reject") {
+      const req = adminReqs.find(r => r.aid === id);
+      if (!req) return;
+      if (action === "reject" && !confirm("Reject this ad request?")) return;
+      await fb.decideAd(req, action === "approve");
+      toast(action === "approve" ? "Ad approved and live" : "Ad rejected");
+    } else if (action === "pause" || action === "resume") {
+      await fb.setAdPaused(id, action === "pause");
+      toast(action === "pause" ? "Ad paused" : "Ad is live again");
+    } else if (action === "extend") {
+      const ad = adminAds.find(a => a.id === id);
+      if (!ad) return;
+      await fb.extendAd(id, ad.expiresAt, 7);
+      toast("Extended by 7 days");
+    } else if (action === "remove") {
+      if (!confirm("Remove this ad now?")) return;
+      await fb.removeAd(id, btn.dataset.uid);
+      toast("Ad removed");
+    }
   } catch (err) {
     toast(errMsg(err));
   }

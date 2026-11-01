@@ -8,6 +8,7 @@ import { initProfile, onProfileShow } from "./profile.js";
 import { initCalls } from "./call.js";
 import { initChat, openDm, openGroup, openNewGroup, refreshChatHead } from "./chat.js";
 import { initPeople, openUser, refreshPeople } from "./people.js";
+import { initMonitor, onMonitorShow } from "./monitor.js";
 
 const S = {
   me: null,
@@ -70,6 +71,7 @@ function go(view) {
   $$("[data-view]").forEach(section => section.classList.toggle("on", section.dataset.view === view));
   if (view === "me") onProfileShow();
   if (view === "adopt" || view === "ads") onMarketShow(view);
+  if (view === "monitor") onMonitorShow();
 }
 
 // ---------- Sign in and register ----------
@@ -183,6 +185,8 @@ async function enter(user) {
   });
   initCalls(ctx);
   initPeople(ctx);
+  initMonitor(ctx);
+  $("#monitorBtn").hidden = !S.isAdmin;
   go("chats");
   renderMe();
 
@@ -330,6 +334,7 @@ function wire() {
     if (row) openGroup(row.dataset.gid, S.groups[row.dataset.gid]?.name || "Group");
   });
   $("#newGroup").addEventListener("click", openNewGroup);
+  $("#monitorBtn").addEventListener("click", () => go("monitor"));
 
   $("#noticeOk").addEventListener("click", async () => {
     const btn = $("#noticeOk");

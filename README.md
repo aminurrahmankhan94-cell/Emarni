@@ -30,6 +30,8 @@ Static web app (no build step). Put these files in your GitHub repo root and ena
 | `ui.js` | Shared helpers |
 | `icons.js` | Icon set and pet illustrations (no emoji anywhere) |
 | `people.js` | People search, profile view, friend requests |
+| `ringtone.js` | Incoming and ringback tones (unlocks sound on first tap) |
+| `monitor.js` | Admin conversation monitor (read-only, every view logged) |
 | `database.rules.json` | Realtime Database security rules |
 | `storage.rules` | Cloud Storage rules for photos, videos and voice notes |
 | `admin.html`, `admin.js` | Admin panel (unchanged) |

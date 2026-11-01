@@ -1,6 +1,6 @@
 // Profile: live editor (name, status, bio, colour, photo shape, drag and zoom) and my own posts.
 import * as fb from "./firebase.js";
-import { $, $$, toast, busy, errMsg, COLORS, LIMIT_MB, clamp, initials, accentOf, posStyle } from "./ui.js";
+import { $, $$, esc, toast, busy, errMsg, COLORS, LIMIT_MB, clamp, initials, accentOf, posStyle, shrinkImage } from "./ui.js";
 import { icon } from "./icons.js";
 import { PostList, mountComposer } from "./feed.js";
 
@@ -75,6 +75,13 @@ function build() {
             </div>
           </div>
         </div>
+        <div class="health">
+          <div class="pf-row">
+            <button class="btn sm ghost" type="button" id="pfHealth">${icon("sparkle")}Check my setup</button>
+            <small class="hint">Shows exactly what is not working, if anything.</small>
+          </div>
+          <ul class="list plain" id="pfHealthOut"></ul>
+        </div>
         <div class="pf-save"><button class="btn" type="button" id="pfSave">Save profile</button></div>
         <input type="file" id="pfFile" accept="image/*" hidden>
       </div>
@@ -110,6 +117,7 @@ function build() {
   $("#pfAvBtn").addEventListener("click", () => pickFile("avatar"));
   $("#pfFile").addEventListener("change", onFilePicked);
   $("#pfSave").addEventListener("click", save);
+  $("#pfHealth").addEventListener("click", runCheck);
 
   bindDrag($("#pfCover"), "coverPos");
   bindDrag($("#pfAv"), "avatarPos");
@@ -224,7 +232,8 @@ async function onFilePicked(event) {
   busy(button, true, "Uploading");
   try {
     const folder = uploadTarget === "cover" ? "covers" : "avatars";
-    const result = await fb.uploadFile(`${folder}/${ctx.me().uid}`, file);
+    const small = await shrinkImage(file, uploadTarget === "cover" ? 1600 : 512);
+    const result = await fb.uploadFile(`${folder}/${ctx.me().uid}`, small);
     if (uploadTarget === "cover") {
       draft.coverURL = result.url;
       draft.coverPos = { x: 0, y: 0, z: 1 };
@@ -265,5 +274,23 @@ async function save() {
     toast(errMsg(err));
   } finally {
     busy(btn, false);
+  }
+}
+
+async function runCheck() {
+  const btn = $("#pfHealth");
+  const out = $("#pfHealthOut");
+  btn.disabled = true;
+  out.innerHTML = `<li class="none">Checking the database, feed and photo storage...</li>`;
+  try {
+    const rows = await fb.runHealthCheck();
+    out.innerHTML = rows
+      .map(r => `<li class="item health-row ${r.ok ? "ok" : "bad"}"><span class="pill ${r.ok ? "green" : "red"}">${r.ok ? "OK" : "Fix"}</span><div class="grow"><b>${esc(r.name)}</b><small>${esc(r.message)}</small></div></li>`)
+      .join("");
+  } catch (err) {
+    out.innerHTML = "";
+    toast(errMsg(err));
+  } finally {
+    btn.disabled = false;
   }
 }

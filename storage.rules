@@ -29,6 +29,13 @@ service firebase.storage {
       allow delete: if isOwner(uid);
     }
 
+    // Chat attachments: photos, videos, voice notes and files (max 50 MB). Only the sender can upload.
+    match /chatfiles/{uid}/{fileName} {
+      allow read: if signedIn();
+      allow create, update: if isOwner(uid) && request.resource.size < 50 * 1024 * 1024;
+      allow delete: if isOwner(uid);
+    }
+
     // Profile photo (max 5 MB).
     match /avatars/{uid}/{fileName} {
       allow read: if signedIn();

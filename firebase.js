@@ -41,6 +41,7 @@ import {
   getFunctions,
   httpsCallable
 } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-functions.js";
+import { friendlyError } from "./ui.js";
 
 // Firebase project configuration. Deploy database.rules.json and storage.rules first.
 const firebaseConfig = {
@@ -60,7 +61,7 @@ export const db = getDatabase(app);
 const storage = getStorage(app);
 const functions = getFunctions(app);
 
-export const NOTICE_VERSION = 2;
+export const NOTICE_VERSION = 3;
 
 // Re-exported so feature modules can talk to the database directly.
 export {
@@ -650,7 +651,7 @@ export function watchActiveAds(callback, onError) {
     ref(db, "ads"),
     snap => {
       const now = Date.now();
-      callback(listOf(snap).filter(ad => Number(ad.expiresAt) > now).sort(byTime).reverse());
+      callback(listOf(snap).filter(ad => Number(ad.expiresAt) > now && ad.paused !== true).sort(byTime).reverse());
     },
     err => onError?.(err)
   );
@@ -821,4 +822,111 @@ export async function cancelFriendRequest(uid) {
 export function watchUserPosts(uid, callback, onError) {
   const q = query(ref(db, "posts"), orderByChild("uid"), equalTo(uid));
   return onValue(q, snap => callback(listOf(snap).sort(byTime).reverse()), err => onError?.(err));
+}
+
+// ---------- v4: chat messages with files, replies and reactions ----------
+export async function sendChatMessage(chat, data, profile) {
+  const user = requireUser("Sign in before sending a message.");
+  const type = data.type || "text";
+  const msg = {
+    uid: user.uid,
+    senderName: String(profile?.displayName || "Emarni user").slice(0, 32),
+    type,
+    createdAt: serverTimestamp()
+  };
+  if (type === "text") {
+    const text = String(data.text || "").trim();
+    if (!text) throw new Error("Write a message first.");
+    if (text.length > 1000) throw new Error("Messages can contain up to 1,000 characters.");
+    msg.text = text;
+  } else {
+    if (!data.fileURL) throw new Error("The file did not upload. Try again.");
+    msg.fileURL = data.fileURL;
+    msg.filePath = data.filePath || "";
+    msg.fileName = String(data.fileName || "file").slice(0, 120);
+    msg.fileSize = Number(data.fileSize) || 0;
+    msg.fileType = String(data.fileType || "");
+    const caption = String(data.text || "").trim().slice(0, 1000);
+    if (caption) msg.text = caption;
+  }
+  if (data.replyTo?.id) {
+    msg.replyTo = {
+      id: String(data.replyTo.id),
+      name: String(data.replyTo.name || "").slice(0, 32),
+      text: String(data.replyTo.text || "").slice(0, 120)
+    };
+  }
+  const path = chat.type === "dm" ? `privateRooms/${chat.id}/messages` : `groupMessages/${chat.id}`;
+  await set(push(ref(db, path)), msg);
+}
+
+const reactionBase = chat => (chat.type === "dm" ? `privateRooms/${chat.id}/reactions` : `groupReactions/${chat.id}`);
+
+export function watchReactions(chat, callback, onError) {
+  return onValue(ref(db, reactionBase(chat)), snap => callback(snap.val() || {}), err => onError?.(err));
+}
+
+// kind is "heart", "check", "sparkle", or null to remove my reaction.
+export function setReaction(chat, msgId, kind) {
+  const user = requireUser();
+  return set(ref(db, `${reactionBase(chat)}/${msgId}/${user.uid}`), kind || null);
+}
+
+// ---------- v4: ad controls (admin) ----------
+export function watchAllAds(callback, onError) {
+  return onValue(ref(db, "ads"), snap => callback(listOf(snap).sort(byTime).reverse()), err => onError?.(err));
+}
+
+export function setAdPaused(id, paused) {
+  requireUser();
+  return update(ref(db, `ads/${id}`), { paused: Boolean(paused) });
+}
+
+export function extendAd(id, expiresAt, days) {
+  requireUser();
+  return update(ref(db, `ads/${id}`), { expiresAt: Number(expiresAt) + Number(days) * 86400000 });
+}
+
+export async function removeAd(id, uid) {
+  requireUser();
+  await update(ref(db), { [`ads/${id}`]: null, [`adRequests/${uid}/${id}/status`]: "removed" });
+}
+
+// ---------- v4: admin conversation monitor (read-only, every view is logged) ----------
+export const adminGetFriendships = uid => get(ref(db, `friendships/${uid}`)).then(snap => snap.val() || {});
+export const adminGetUserGroups = uid => get(ref(db, `userGroups/${uid}`)).then(snap => snap.val() || {});
+export const adminGetGroup = gid => get(ref(db, `groups/${gid}`)).then(snap => (snap.exists() ? snap.val() : null));
+
+export function watchRoomMessagesFor(scope, id, callback, onError) {
+  const path = scope === "group" ? `groupMessages/${id}` : `privateRooms/${id}/messages`;
+  const q = query(ref(db, path), orderByChild("createdAt"), limitToLast(200));
+  return onValue(q, snap => callback(listOf(snap).sort(byTime)), err => onError?.(err));
+}
+
+export function logAdminOpen(scope, id) {
+  const user = requireUser();
+  return push(ref(db, "adminAudit"), { adminUid: user.uid, scope, roomId: id, at: serverTimestamp() });
+}
+
+// ---------- v4: setup check (tells exactly what is not working) ----------
+export async function runHealthCheck() {
+  const user = requireUser();
+  const rows = [];
+  const check = async (name, task, okText) => {
+    try {
+      await task();
+      rows.push({ name, ok: true, message: okText });
+    } catch (err) {
+      rows.push({ name, ok: false, message: friendlyError(err) });
+    }
+  };
+  await check("Database write", () => set(ref(db, `_health/${user.uid}`), { at: serverTimestamp() }), "Data can be saved.");
+  await check("Database read", () => get(ref(db, `_health/${user.uid}`)), "Data can be read.");
+  await check("Feed read", () => get(query(ref(db, "posts"), limitToLast(1))), "The feed can be loaded.");
+  await check("Photo upload", async () => {
+    const file = new File([new Uint8Array([137, 80, 78, 71])], "health-check.png", { type: "image/png" });
+    const sent = await uploadFile(`avatars/${user.uid}`, file);
+    await deleteFile(sent.path);
+  }, "Photos can be uploaded and removed.");
+  return rows;
 }

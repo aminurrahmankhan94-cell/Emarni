@@ -4,20 +4,22 @@ import * as fb from "./firebase.js";
 import { $, toast, avatarHTML, errMsg } from "./ui.js";
 import { icon } from "./icons.js";
 import { initBoardUi, openBoard, closeBoard, toggleBoardPanel } from "./board.js";
+import { initRingtone, startRing, stopRing, startRingback, stopRingback, unlockSound, soundReady, onSoundChange } from "./ringtone.js";
 
 // For calls across strict networks, add a TURN server here:
 // { urls: "turn:your-host:3478", username: "user", credential: "pass" }
 const RTC_CONFIG = {
   iceServers: [{ urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] }]
 };
-const INVITE_TTL = 90 * 1000;
-const RING_TIMEOUT = 45 * 1000;
+const INVITE_TTL = 60 * 1000;
+const RING_TIMEOUT = 60 * 1000;
+const NO_ANSWER = 60 * 1000;
 
 const R = path => fb.ref(fb.db, path);
 
 let ctx = null;
 let session = null;
-const ringing = { rid: null, timer: 0, tone: null };
+const ringing = { rid: null, timer: 0 };
 let clockId = 0;
 
 export function initCalls(context) {
@@ -27,6 +29,14 @@ export function initCalls(context) {
   $("#btnCam").addEventListener("click", toggleCam);
   $("#btnBoard").addEventListener("click", () => toggleBoardPanel());
   $("#btnHang").addEventListener("click", hangUp);
+  initRingtone();
+  $("#ringSound").addEventListener("click", () => {
+    unlockSound();
+    if (ringing.rid) startRing("incoming");
+  });
+  onSoundChange(ok => {
+    $("#ringSound").hidden = ok || !ringing.rid;
+  });
 
   const invitesRef = R(`userCalls/${ctx.me().uid}`);
   fb.onChildAdded(invitesRef, snap => handleInvite(snap.key, snap.val()));
@@ -68,6 +78,10 @@ export async function startCall({ type, targets, title }) {
       createdAt: Date.now()
     });
     await joinRoom(rid, { type, title, createdBy: me.uid, targets, local });
+    if (targets.length) {
+      startRingback();
+      session.noAnswer = setTimeout(noAnswer, NO_ANSWER);
+    }
   } catch (err) {
     local.getTracks().forEach(track => track.stop());
     session = null;
@@ -172,13 +186,14 @@ function showRing(rid, invite) {
   $("#ringView").classList.add("open");
   $("#ringAccept").onclick = () => acceptCall(rid);
   $("#ringDecline").onclick = () => declineCall(rid);
-  startTone();
-  ringing.timer = setTimeout(() => declineCall(rid), RING_TIMEOUT);
+  startRing("incoming");
+  $("#ringSound").hidden = soundReady();
+  ringing.timer = setTimeout(() => missedCall(rid, invite), RING_TIMEOUT);
 }
 
 function hideRing() {
   clearTimeout(ringing.timer);
-  stopTone();
+  stopRing();
   ringing.rid = null;
   $("#ringView").classList.remove("open");
 }
@@ -186,38 +201,6 @@ function hideRing() {
 async function declineCall(rid) {
   hideRing();
   await fb.remove(R(`userCalls/${ctx.me().uid}/${rid}`)).catch(() => {});
-}
-
-function startTone() {
-  stopTone();
-  try {
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    const audio = new AudioCtx();
-    const ring = () => {
-      const osc = audio.createOscillator();
-      const gain = audio.createGain();
-      osc.type = "sine";
-      osc.frequency.value = 520;
-      gain.gain.setValueAtTime(0.0001, audio.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.18, audio.currentTime + 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + 0.7);
-      osc.connect(gain).connect(audio.destination);
-      osc.start();
-      osc.stop(audio.currentTime + 0.75);
-      navigator.vibrate?.(180);
-    };
-    ring();
-    ringing.tone = { audio, id: setInterval(ring, 1600) };
-  } catch {
-    // Sound may be blocked until the user interacts with the page.
-  }
-}
-
-function stopTone() {
-  if (!ringing.tone) return;
-  clearInterval(ringing.tone.id);
-  ringing.tone.audio.close().catch(() => {});
-  ringing.tone = null;
 }
 
 // ---------- Signalling ----------
@@ -317,6 +300,7 @@ function watchParticipants(rid, me) {
     fb.onChildAdded(base, snap => {
       const uid = snap.key;
       if (uid === me) return;
+      markConnected();
       const info = snap.val() || {};
       session.names.set(uid, info.name || "Guest");
       addTile(uid, ctx.author(uid) || { displayName: info.name }, false, info);
@@ -408,6 +392,8 @@ async function hangUp() {
   if (!s) return;
   session = null;
   const me = ctx.me().uid;
+  stopRingback();
+  clearTimeout(s.noAnswer);
   s.unsubs.forEach(off => off());
   s.peers.forEach(peer => peer.pc.close());
   s.local.getTracks().forEach(track => track.stop());
@@ -438,6 +424,7 @@ function showCallView() {
   $("#callView").classList.add("open");
   $("#callTitle").textContent = session.title;
   $("#btnCam").hidden = session.type !== "video";
+  setCallStatus(session.targets.length ? "Calling..." : "Joining...");
   $("#btnCam").classList.toggle("off", !session.camOn);
   $("#btnMic").classList.remove("off");
   $("#boardPanel").classList.remove("open");
@@ -461,4 +448,28 @@ function startClock() {
   };
   tick();
   clockId = setInterval(tick, 1000);
+}
+
+// ---------- Call status, connection, timeouts and missed calls ----------
+function setCallStatus(text) {
+  const el = $("#callStatus");
+  if (el) el.textContent = text;
+}
+
+// The first remote person joined: stop the caller's ringback and show "Connected".
+function markConnected() {
+  stopRingback();
+  clearTimeout(session?.noAnswer);
+  setCallStatus("Connected");
+}
+
+function noAnswer() {
+  if (!session) return;
+  toast("No answer. The call has ended.", 3500);
+  hangUp();
+}
+
+function missedCall(rid, invite) {
+  toast(`Missed ${invite.type === "video" ? "video" : "audio"} call from ${invite.fromName || "someone"}`, 4200);
+  declineCall(rid);
 }

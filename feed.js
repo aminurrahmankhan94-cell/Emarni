@@ -1,6 +1,6 @@
 // Posts: a reusable composer and post list, used by the Feed and by every profile.
 import * as fb from "./firebase.js";
-import { $, esc, toast, avatarHTML, timeAgo, busy, errMsg, fileKind, LIMIT_MB, askText, pop } from "./ui.js";
+import { $, esc, toast, avatarHTML, timeAgo, busy, errMsg, fileKind, LIMIT_MB, askText, pop, shrinkImage } from "./ui.js";
 import { icon } from "./icons.js";
 
 let ctx = null;
@@ -416,7 +416,8 @@ export function mountComposer(root) {
       if (pending) {
         bar.classList.remove("hidden");
         bar.firstElementChild.style.width = "0%";
-        media = await fb.uploadFile(`media/${ctx.me().uid}`, pending.file, pct => {
+        const upload = pending.kind === "image" ? await shrinkImage(pending.file, 1600) : pending.file;
+        media = await fb.uploadFile(`media/${ctx.me().uid}`, upload, pct => {
           bar.firstElementChild.style.width = `${Math.round(pct * 100)}%`;
         });
       }

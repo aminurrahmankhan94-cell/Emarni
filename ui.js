@@ -5,7 +5,7 @@ export const $$ = (selector, root = document) => Array.from(root.querySelectorAl
 export const esc = value =>
   String(value ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
 
-export const errMsg = err => err?.message || "Something went wrong. Please try again.";
+export const errMsg = err => friendlyError(err);
 
 export const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
@@ -26,12 +26,12 @@ export function toast(message, ms = 2600) {
 export function busy(button, on, label = "Working…") {
   if (!button) return;
   if (on) {
-    button.dataset.label = button.textContent;
+    button.dataset.label = button.innerHTML;
     button.textContent = label;
     button.disabled = true;
     button.classList.add("loading");
   } else {
-    button.textContent = button.dataset.label || button.textContent;
+    button.innerHTML = button.dataset.label || button.innerHTML;
     button.disabled = false;
     button.classList.remove("loading");
   }
@@ -125,4 +125,52 @@ export function askText({ title, placeholder = "", required = true, okText = "Se
     $("#dlgTextCancel").onclick = () => finish(null);
     dialog.oncancel = () => finish(null);
   });
+}
+
+// Turns a Firebase or browser error into the specific reason, so the real cause is visible.
+export function friendlyError(err) {
+  const code = String(err?.code || "");
+  const msg = String(err?.message || "");
+  const text = `${code} ${msg}`;
+  if (/storage\/unauthorized/i.test(text)) {
+    return "Photos cannot be saved yet. Firebase Storage > Rules e storage.rules publish korun.";
+  }
+  if (/storage\/(bucket-not-found|no-default-bucket|project-not-found)/i.test(text)) {
+    return "Firebase Storage chalu nei. Firebase console > Storage > Get started korun.";
+  }
+  if (/storage\/quota/i.test(text)) return "Storage space shesh hoye geche.";
+  if (/storage\/retry-limit|network|failed to fetch|timeout/i.test(text)) {
+    return "Internet connection thik nei. Abar chesta korun.";
+  }
+  if (/permission[ _-]?denied/i.test(text)) {
+    return "Database access denied. Realtime Database > Rules e database.rules.json publish korun.";
+  }
+  if (/cancel+ed/i.test(text)) return "The upload was cancelled.";
+  return msg || "Something went wrong. Please try again.";
+}
+
+// Resizes a picture before upload: smaller files and far fewer failed uploads.
+// GIFs and non-picture files are returned unchanged.
+export async function shrinkImage(file, maxSide = 1280, quality = 0.86) {
+  if (!file.type.startsWith("image/") || file.type === "image/gif") return file;
+  let bitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    throw new Error("This picture format is not supported here. Use a JPG or PNG.");
+  }
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  const pen = canvas.getContext("2d");
+  pen.fillStyle = "#ffffff";
+  pen.fillRect(0, 0, canvas.width, canvas.height);
+  pen.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close?.();
+  const blob = await new Promise((resolve, reject) => {
+    canvas.toBlob(b => (b ? resolve(b) : reject(new Error("Could not prepare the picture."))), "image/jpeg", quality);
+  });
+  const base = String(file.name || "picture").replace(/\.[^.]+$/, "");
+  return new File([blob], `${base}.jpg`, { type: "image/jpeg" });
 }
