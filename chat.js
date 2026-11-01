@@ -2,6 +2,7 @@
 import * as fb from "./firebase.js";
 import { $, $$, esc, toast, busy, errMsg, avatarHTML, askText, timeOf, initials, COLORS, openDialog } from "./ui.js";
 import { startCall } from "./call.js";
+import { icon } from "./icons.js";
 
 const C = {
   chat: null, // { type: "dm" | "group", id, uid?, name }
@@ -33,6 +34,12 @@ export function initChat(context) {
   $("#gForm").addEventListener("submit", createFromForm);
   $("#infoAdd").addEventListener("click", addMemberFromInfo);
   $("#infoLeave").addEventListener("click", leaveCurrentGroup);
+  $("#infoBody").addEventListener("click", event => {
+    const row = event.target.closest("[data-user]");
+    if (!row) return;
+    $("#dlgInfo").close();
+    ctx.openUser(row.dataset.user);
+  });
 }
 
 export function refreshChatHead() {
@@ -101,15 +108,15 @@ function renderHead() {
     $("#chatAv").innerHTML = avatarHTML(profile);
     $("#chatName").textContent = profile.displayName;
     $("#chatSub").textContent = profile.status || (profile.emarniId ? `ID ${profile.emarniId}` : "");
-    info.textContent = "⚑";
-    info.title = "Report user";
+    info.innerHTML = icon("user");
+    info.title = "View profile";
   } else {
     const color = ctx.groupColor(chat.id);
     const count = Object.keys(C.group?.members || {}).length;
     $("#chatAv").innerHTML = `<span class="av" style="--ring:${color}"><span>${esc(initials(chat.name))}</span></span>`;
     $("#chatName").textContent = chat.name;
     $("#chatSub").textContent = count ? `${count} member${count === 1 ? "" : "s"}` : "Group";
-    info.textContent = "ⓘ";
+    info.innerHTML = icon("info");
     info.title = "Group info";
   }
 }
@@ -124,7 +131,7 @@ function renderMessages(list) {
   const stick = box.scrollHeight - box.scrollTop - box.clientHeight < 140;
 
   if (!list.length) {
-    box.innerHTML = `<div class="empty-msgs">No messages yet. Say hi 👋</div>`;
+    box.innerHTML = `<div class="empty-msgs">No messages yet. Say hi</div>`;
   } else {
     box.innerHTML = list
       .map(m => {
@@ -213,17 +220,7 @@ function callFromChat(type) {
 async function headAction() {
   const chat = C.chat;
   if (!chat) return;
-  if (chat.type === "dm") {
-    const reason = await askText({ title: `Report ${chat.name}`, placeholder: "What happened?", okText: "Report" });
-    if (!reason) return;
-    try {
-      await fb.reportUser(chat.uid, reason);
-      toast("User reported. Thank you.");
-    } catch (err) {
-      toast(errMsg(err));
-    }
-    return;
-  }
+  if (chat.type === "dm") return ctx.openUser(chat.uid);
   openInfo();
 }
 
@@ -278,7 +275,7 @@ function openInfo() {
     .map(uid => {
       const p = ctx.byUid(uid) || { displayName: "Emarni user" };
       const role = uid === group.createdBy ? "Creator" : p.emarniId || "";
-      return `<li class="item">${avatarHTML(p, "sm")}<div class="grow"><b>${esc(p.displayName)}</b><small>${esc(role)}</small></div></li>`;
+      return `<li class="item" data-user="${esc(uid)}">${avatarHTML(p, "sm")}<div class="grow"><b>${esc(p.displayName)}</b><small>${esc(role)}</small></div></li>`;
     })
     .join("");
   const addable = friendChoices().filter(p => !members[p.uid]);

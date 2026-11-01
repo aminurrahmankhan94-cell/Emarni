@@ -28,6 +28,8 @@ Static web app (no build step). Put these files in your GitHub repo root and ena
 | `board.js` | Shared whiteboard used inside calls |
 | `firebase.js` | Firebase layer (auth, database, storage, all data functions) |
 | `ui.js` | Shared helpers |
+| `icons.js` | Icon set and pet illustrations (no emoji anywhere) |
+| `people.js` | People search, profile view, friend requests |
 | `database.rules.json` | Realtime Database security rules |
 | `storage.rules` | Cloud Storage rules for photos, videos and voice notes |
 | `admin.html`, `admin.js` | Admin panel (unchanged) |

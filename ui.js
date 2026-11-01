@@ -9,7 +9,7 @@ export const errMsg = err => err?.message || "Something went wrong. Please try a
 
 export const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
-export const COLORS = ["#67e8f9", "#818cf8", "#f472b6", "#34d399", "#fbbf24", "#fb7185", "#60a5fa"];
+export const COLORS = ["#ef4444", "#dc2626", "#f87171", "#fecaca", "#ffffff", "#a3a3a3"];
 
 export const LIMIT_MB = { image: 10, video: 50, audio: 20, avatar: 5, cover: 8, pet: 8, ad: 5 };
 
@@ -42,7 +42,7 @@ export function initials(name = "") {
   return parts.map(word => word[0]).join("").toUpperCase() || "E";
 }
 
-export const accentOf = profile => (/^#[0-9a-f]{6}$/i.test(profile?.accent || "") ? profile.accent : "#67e8f9");
+export const accentOf = profile => (/^#[0-9a-f]{6}$/i.test(profile?.accent || "") ? profile.accent : "#ef4444");
 
 // Position and zoom of a photo: x/y are percentages of the frame, z is the zoom (1 to 3).
 export function posStyle(pos = {}) {

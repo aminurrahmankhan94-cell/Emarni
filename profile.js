@@ -1,11 +1,14 @@
-// Profile editor: name, status, bio, accent colour, photo shape, and drag-to-position cover and avatar.
+// Profile: live editor (name, status, bio, colour, photo shape, drag and zoom) and my own posts.
 import * as fb from "./firebase.js";
 import { $, $$, toast, busy, errMsg, COLORS, LIMIT_MB, clamp, initials, accentOf, posStyle } from "./ui.js";
+import { icon } from "./icons.js";
+import { PostList, mountComposer } from "./feed.js";
 
 let ctx = null;
 let built = false;
 let draft = null;
-let uploadTarget = "cover"; // "cover" or "avatar"
+let uploadTarget = "cover";
+let myPosts = null;
 
 export function initProfile(context) {
   ctx = context;
@@ -29,10 +32,10 @@ function build() {
       <div class="pf-preview card-glass">
         <div class="cover" id="pfCover">
           <img id="pfCoverImg" alt="" draggable="false" hidden>
-          <span class="cover-hint">Drag to reposition</span>
+          <span class="cover-hint">Drag to move</span>
         </div>
         <div class="pf-id">
-          <div class="pf-av" id="pfAv" title="Drag to reposition">
+          <div class="pf-av" id="pfAv" title="Drag to move">
             <img id="pfAvImg" alt="" draggable="false" hidden>
             <span id="pfAvInit"></span>
           </div>
@@ -47,18 +50,18 @@ function build() {
 
       <div class="card-glass pf-tools">
         <div class="pf-row">
-          <button class="btn sm ghost" type="button" id="pfCoverBtn">Change cover photo</button>
+          <button class="btn sm ghost" type="button" id="pfCoverBtn">${icon("image")}Cover photo</button>
           <label class="range">Cover zoom <input type="range" id="pfCoverZoom" min="1" max="3" step="0.01"></label>
           <button class="btn sm ghost" type="button" id="pfCoverReset">Reset</button>
         </div>
         <div class="pf-row">
-          <button class="btn sm ghost" type="button" id="pfAvBtn">Change profile photo</button>
+          <button class="btn sm ghost" type="button" id="pfAvBtn">${icon("user")}Profile photo</button>
           <label class="range">Photo zoom <input type="range" id="pfAvZoom" min="1" max="3" step="0.01"></label>
           <button class="btn sm ghost" type="button" id="pfAvReset">Reset</button>
         </div>
         <div class="pf-grid">
           <label>Display name <input id="pfNameIn" maxlength="32" autocomplete="name"></label>
-          <label>Status <input id="pfStatusIn" maxlength="60" placeholder="📚 Studying, 🎧 Busy…"></label>
+          <label>Status <input id="pfStatusIn" maxlength="60" placeholder="Studying, Busy, Available"></label>
           <label class="wide">Bio <textarea id="pfBioIn" maxlength="200" rows="2" placeholder="A line about you"></textarea></label>
           <div class="wide">
             <span class="hint">Accent colour</span>
@@ -75,6 +78,13 @@ function build() {
         <div class="pf-save"><button class="btn" type="button" id="pfSave">Save profile</button></div>
         <input type="file" id="pfFile" accept="image/*" hidden>
       </div>
+
+      <section class="me-posts">
+        <h3>Post from your profile</h3>
+        <div id="meComposer"></div>
+        <h3>My posts</h3>
+        <div id="myPosts"></div>
+      </section>
     </div>`;
 
   $("#pfColors").innerHTML = COLORS.map(c => `<button type="button" data-c="${c}" style="background:${c}" aria-label="Accent ${c}"></button>`).join("");
@@ -93,8 +103,8 @@ function build() {
 
   $("#pfCoverZoom").addEventListener("input", e => setZoom("coverPos", e.target.value));
   $("#pfAvZoom").addEventListener("input", e => setZoom("avatarPos", e.target.value));
-  $("#pfCoverReset").addEventListener("click", () => { draft.coverPos = { x: 0, y: 0, z: 1 }; paint(); fillForm(); });
-  $("#pfAvReset").addEventListener("click", () => { draft.avatarPos = { x: 0, y: 0, z: 1 }; paint(); fillForm(); });
+  $("#pfCoverReset").addEventListener("click", () => { draft.coverPos = { x: 0, y: 0, z: 1 }; fillForm(); paint(); });
+  $("#pfAvReset").addEventListener("click", () => { draft.avatarPos = { x: 0, y: 0, z: 1 }; fillForm(); paint(); });
 
   $("#pfCoverBtn").addEventListener("click", () => pickFile("cover"));
   $("#pfAvBtn").addEventListener("click", () => pickFile("avatar"));
@@ -103,6 +113,14 @@ function build() {
 
   bindDrag($("#pfCover"), "coverPos");
   bindDrag($("#pfAv"), "avatarPos");
+
+  mountComposer($("#meComposer"));
+  myPosts = new PostList($("#myPosts"), {
+    source: "user",
+    uid: ctx.me().uid,
+    emptyText: "You have not posted yet. Share a photo, video or voice note."
+  });
+  myPosts.start();
 }
 
 function fillForm() {
@@ -164,7 +182,7 @@ function paint() {
     cover.style.background = "";
   } else {
     coverImg.hidden = true;
-    cover.style.background = `radial-gradient(circle at 18% 20%, ${accent}66, transparent 60%), linear-gradient(135deg, #0e1a33, ${accent}3d)`;
+    cover.style.background = `radial-gradient(circle at 18% 20%, ${accent}66, transparent 60%), linear-gradient(135deg, #0a0a0a, #3f0d0d)`;
   }
 
   const av = $("#pfAv");
@@ -203,7 +221,7 @@ async function onFilePicked(event) {
   if (file.size > LIMIT_MB[kind] * 1048576) return toast(`Picture must be under ${LIMIT_MB[kind]} MB`);
 
   const button = uploadTarget === "cover" ? $("#pfCoverBtn") : $("#pfAvBtn");
-  busy(button, true, "Uploading…");
+  busy(button, true, "Uploading");
   try {
     const folder = uploadTarget === "cover" ? "covers" : "avatars";
     const result = await fb.uploadFile(`${folder}/${ctx.me().uid}`, file);
@@ -228,7 +246,7 @@ async function save() {
   const name = (draft.displayName || "").trim();
   if (name.length < 2 || name.length > 32) return toast("Display name must be 2 to 32 characters");
   const btn = $("#pfSave");
-  busy(btn, true, "Saving…");
+  busy(btn, true, "Saving");
   try {
     const next = await fb.saveProfile({
       displayName: name,
@@ -242,11 +260,10 @@ async function save() {
       coverPos: draft.coverPos
     });
     ctx.setMe(next);
-    toast("Profile saved ✨");
+    toast("Profile saved");
   } catch (err) {
     toast(errMsg(err));
   } finally {
     busy(btn, false);
   }
 }
-

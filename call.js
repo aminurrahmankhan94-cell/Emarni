@@ -2,6 +2,7 @@
 // Mesh design: for each pair, the smaller user id creates the offer. Works well up to about 4 people.
 import * as fb from "./firebase.js";
 import { $, toast, avatarHTML, errMsg } from "./ui.js";
+import { icon } from "./icons.js";
 import { initBoardUi, openBoard, closeBoard, toggleBoardPanel } from "./board.js";
 
 // For calls across strict networks, add a TURN server here:
@@ -364,7 +365,7 @@ function updateFlags(uid, info) {
   const tile = tileOf(uid);
   if (!tile) return;
   tile.classList.toggle("cam-off", info.cam === false);
-  tile.querySelector(".mic-state").textContent = info.mic === false ? "🔇" : "";
+  tile.querySelector(".mic-state").innerHTML = info.mic === false ? icon("micoff") : "";
 }
 
 function attachRemote(uid, stream) {

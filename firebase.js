@@ -177,7 +177,7 @@ export function publicOf(p) {
     avatarShape: p.avatarShape || "circle",
     coverURL: p.coverURL || "",
     coverPos: p.coverPos || { x: 0, y: 0, z: 1 },
-    accent: p.accent || "#67e8f9",
+    accent: p.accent || "#ef4444",
     createdAt: p.createdAt || Date.now()
   };
 }
@@ -205,7 +205,7 @@ export async function ensureUserProfile(user, preferredName = "") {
         avatarPos: { x: 0, y: 0, z: 1 },
         coverPos: { x: 0, y: 0, z: 1 },
         avatarShape: "circle",
-        accent: "#67e8f9",
+        accent: "#ef4444",
         createdAt: Date.now(),
         updatedAt: Date.now()
       };
@@ -274,6 +274,7 @@ export async function sendFriendRequest(recipientUid, profile) {
     status: "pending",
     createdAt: Date.now()
   });
+  await set(ref(db, `sentRequests/${user.uid}/${recipientUid}`), { status: "pending", at: Date.now() });
 }
 
 export async function respondFriendRequest(requesterUid, accept) {
@@ -411,7 +412,7 @@ export async function createGroup({ name, color, memberUids }) {
     if (uid && uid !== user.uid) members[uid] = true;
   });
   const joinedAt = Date.now();
-  const groupColor = color || "#67e8f9";
+  const groupColor = color || "#ef4444";
   await set(ref(db, `groups/${gid}`), {
     name: cleanName,
     color: groupColor,
@@ -803,3 +804,21 @@ export const purgeArchive = keys =>
 
 export const logAdminView = roomId =>
   push(ref(db, "adminAudit"), { adminUid: currentUser.uid, roomId, at: serverTimestamp() });
+
+// ---------- v3: sent requests, cancelling requests, and posts by one person ----------
+export function watchSentRequests(uid, callback, onError) {
+  return onValue(ref(db, `sentRequests/${uid}`), snap => callback(snap.val() || {}), err => onError?.(err));
+}
+
+export async function cancelFriendRequest(uid) {
+  const user = requireUser();
+  await update(ref(db), {
+    [`friendRequests/${uid}/${user.uid}`]: null,
+    [`sentRequests/${user.uid}/${uid}`]: null
+  });
+}
+
+export function watchUserPosts(uid, callback, onError) {
+  const q = query(ref(db, "posts"), orderByChild("uid"), equalTo(uid));
+  return onValue(q, snap => callback(listOf(snap).sort(byTime).reverse()), err => onError?.(err));
+}

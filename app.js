@@ -1,28 +1,30 @@
-// Emarni - app shell: splash, sign-in, navigation, friends and groups lists, and feature wiring.
+// Emarni: app shell. Splash, sign-in, navigation, friends, groups, and wiring for every feature.
 import * as fb from "./firebase.js";
 import { $, $$, esc, toast, busy, errMsg, avatarHTML, wireDialogs, openDialog } from "./ui.js";
+import { icon, hydrate } from "./icons.js";
 import { initFeed, refreshFeed } from "./feed.js";
 import { initMarket, refreshMarket, onMarketShow } from "./market.js";
 import { initProfile, onProfileShow } from "./profile.js";
 import { initCalls } from "./call.js";
-import { initChat, openDm, openGroup, refreshChatHead } from "./chat.js";
+import { initChat, openDm, openGroup, openNewGroup, refreshChatHead } from "./chat.js";
+import { initPeople, openUser, refreshPeople } from "./people.js";
 
 const S = {
   me: null,
   isAdmin: false,
   booted: null,
   bootAt: Date.now(),
-  dir: {}, // emarniId -> profile
-  byUid: {}, // uid -> profile
+  dir: {}, // emarniId -> public profile
+  byUid: {}, // uid -> public profile
   friends: {}, // uid -> { status }
-  requests: {}, // uid -> request
+  sent: {}, // uid -> { status } requests I sent
+  requests: {}, // uid -> request sent to me
   groups: {}, // gid -> { name, color }
-  listQuery: "",
   unsubs: []
 };
 
 // ---------- Splash ----------
-const SPLASH_LINES = ["Warming up the studio", "Securing your connection", "Syncing chats and friends", "Almost there"];
+const SPLASH_LINES = ["Warming up", "Securing your connection", "Syncing chats and friends", "Almost there"];
 let splashTimer = 0;
 
 function buildBrand() {
@@ -93,7 +95,7 @@ async function submitAuth(event) {
   const errorBox = $("#authErr");
   errorBox.textContent = "";
   const btn = $("#authBtn");
-  busy(btn, true, "Please wait…");
+  busy(btn, true, "Please wait");
   try {
     const password = $("#fPass").value;
     if (authMode === "register") {
@@ -124,6 +126,27 @@ async function forgotPassword() {
   }
 }
 
+// ---------- Relationships ----------
+function friendUids() {
+  return Object.keys(S.friends).filter(uid => S.friends[uid]?.status === "accepted");
+}
+
+function friendProfiles() {
+  return friendUids()
+    .map(uid => S.byUid[uid])
+    .filter(Boolean)
+    .sort((a, b) => a.displayName.localeCompare(b.displayName));
+}
+
+// How I relate to another user: me, friend, incoming request, request I sent, or none.
+function relation(uid) {
+  if (uid === S.me?.uid) return "me";
+  if (S.friends[uid]?.status === "accepted") return "friend";
+  if (S.requests[uid]?.status === "pending") return "incoming";
+  if (S.sent[uid]?.status === "pending") return "sent";
+  return "none";
+}
+
 // ---------- Entering the app ----------
 async function enter(user) {
   S.me = await fb.ensureUserProfile(user);
@@ -135,24 +158,31 @@ async function enter(user) {
 
   const ctx = {
     me: () => S.me,
+    dir: () => S.dir,
     author: uid => S.byUid[uid] || null,
     isAdmin: () => S.isAdmin,
+    friendIds: friendUids,
+    relation,
+    openUser,
+    go,
     setMe: profile => {
       S.me = profile;
       renderMe();
+      refreshFeed();
     }
-  };
-  const chatCtx = {
-    me: () => S.me,
-    byUid: uid => S.byUid[uid] || null,
-    friends: friendProfiles,
-    groupColor: gid => S.groups[gid]?.color || "#818cf8"
   };
   initFeed(ctx);
   initMarket(ctx);
   initProfile(ctx);
-  initChat(chatCtx);
+  initChat({
+    me: ctx.me,
+    byUid: uid => S.byUid[uid] || null,
+    friends: friendProfiles,
+    groupColor: gid => S.groups[gid]?.color || "#ef4444",
+    openUser
+  });
   initCalls(ctx);
+  initPeople(ctx);
   go("chats");
   renderMe();
 
@@ -173,18 +203,28 @@ function watchLists(uid) {
       refreshFeed();
       refreshMarket();
       refreshChatHead();
+      refreshPeople();
     })
   );
   S.unsubs.push(
     fb.watchFriendships(uid, friends => {
       S.friends = friends;
       renderFriends();
+      refreshPeople();
+      refreshFeed();
+    })
+  );
+  S.unsubs.push(
+    fb.watchSentRequests(uid, sent => {
+      S.sent = sent;
+      refreshPeople();
     })
   );
   S.unsubs.push(
     fb.watchIncomingRequests(uid, requests => {
       S.requests = requests;
       renderRequests();
+      refreshPeople();
     })
   );
   S.unsubs.push(
@@ -197,21 +237,13 @@ function watchLists(uid) {
 }
 
 // ---------- Side panel rendering ----------
-function friendProfiles() {
-  return Object.entries(S.friends)
-    .filter(([, rel]) => rel?.status === "accepted")
-    .map(([uid]) => S.byUid[uid])
-    .filter(Boolean)
-    .sort((a, b) => a.displayName.localeCompare(b.displayName));
-}
-
 function renderMe() {
   const p = S.me;
   if (!p) return;
   $("#meBox").innerHTML = `${avatarHTML(p)}
     <div class="me-info">
       <b>${esc(p.displayName)}</b>
-      <button class="copy-id" id="copyId" type="button" title="Copy your Emarni ID">${esc(p.emarniId)} ⧉</button>
+      <button class="copy-id" id="copyId" type="button" title="Copy your Emarni ID">${esc(p.emarniId)} ${icon("copy")}</button>
     </div>`;
   $("#copyId").addEventListener("click", () => {
     navigator.clipboard?.writeText(p.emarniId);
@@ -239,7 +271,7 @@ function renderGroups() {
     ? entries
         .map(
           ([gid, g]) => `<li class="item" data-gid="${esc(gid)}">
-            <span class="dot" style="background:${esc(g.color || "#818cf8")}"></span>
+            <span class="dot" style="background:${esc(g.color || "#ef4444")}"></span>
             <div class="grow"><b>${esc(g.name)}</b><small>Group chat</small></div>
           </li>`
         )
@@ -248,10 +280,7 @@ function renderGroups() {
 }
 
 function renderFriends() {
-  const q = S.listQuery.toLowerCase();
-  const list = friendProfiles().filter(
-    p => !q || p.displayName.toLowerCase().includes(q) || p.emarniId.toLowerCase().includes(q)
-  );
+  const list = friendProfiles();
   $("#friendList").innerHTML = list.length
     ? list
         .map(
@@ -261,7 +290,7 @@ function renderFriends() {
           </li>`
         )
         .join("")
-    : `<li class="none">${q ? "No matches" : "No friends yet. Add one with their Emarni ID."}</li>`;
+    : `<li class="none">No friends yet. Search for people above to add them.</li>`;
 }
 
 // ---------- Wiring ----------
@@ -281,22 +310,6 @@ function wire() {
     location.href = "admin.html";
   });
 
-  $("#addForm").addEventListener("submit", async event => {
-    event.preventDefault();
-    const input = $("#addId");
-    const id = input.value.trim().toUpperCase();
-    if (!id) return;
-    const target = S.dir[id];
-    if (!target) return toast("No user with that Emarni ID");
-    try {
-      await fb.sendFriendRequest(target.uid, S.me);
-      input.value = "";
-      toast(`Friend request sent to ${target.displayName}`);
-    } catch (err) {
-      toast(errMsg(err));
-    }
-  });
-
   $("#reqList").addEventListener("click", async event => {
     const btn = event.target.closest("[data-req]");
     if (!btn) return;
@@ -308,22 +321,19 @@ function wire() {
     }
   });
 
-  $("#friendSearch").addEventListener("input", event => {
-    S.listQuery = event.target.value.trim();
-    renderFriends();
-  });
   $("#friendList").addEventListener("click", event => {
-    const li = event.target.closest("[data-uid]");
-    if (li) openDm(li.dataset.uid);
+    const row = event.target.closest("[data-uid]");
+    if (row) openUser(row.dataset.uid);
   });
   $("#groupList").addEventListener("click", event => {
-    const li = event.target.closest("[data-gid]");
-    if (li) openGroup(li.dataset.gid, S.groups[li.dataset.gid]?.name || "Group");
+    const row = event.target.closest("[data-gid]");
+    if (row) openGroup(row.dataset.gid, S.groups[row.dataset.gid]?.name || "Group");
   });
+  $("#newGroup").addEventListener("click", openNewGroup);
 
   $("#noticeOk").addEventListener("click", async () => {
     const btn = $("#noticeOk");
-    busy(btn, true, "Saving…");
+    busy(btn, true, "Saving");
     try {
       await fb.acknowledgeNotice();
       $("#dlgNotice").close();
@@ -341,6 +351,7 @@ function wire() {
 function boot() {
   buildBrand();
   startSplash();
+  hydrate();
   wire();
   fb.watchAuth(async user => {
     if (!user) {

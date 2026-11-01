@@ -1,6 +1,7 @@
 // Pet adoption (free adoption only) and paid ads with admin approval.
 import * as fb from "./firebase.js";
 import { $, $$, esc, toast, busy, errMsg, timeAgo, LIMIT_MB, openDialog, avatarHTML } from "./ui.js";
+import { icon, petArt } from "./icons.js";
 
 // Replace these numbers with your real payment details before you go live.
 const PAY = {
@@ -10,7 +11,6 @@ const PAY = {
   Bank: "Ask the Emarni admin for account details"
 };
 const MIN_AMOUNT = 100;
-const SPECIES_ICON = { Dog: "🐶", Cat: "🐱", Bird: "🐦", Rabbit: "🐰", Other: "🐾" };
 
 let ctx = null;
 let pets = [];
@@ -70,7 +70,7 @@ function petCard(pet, me, index) {
   const owner = ctx.author(pet.uid);
   const photo = pet.photoURL
     ? `<img src="${esc(pet.photoURL)}" alt="${esc(pet.name)}" loading="lazy">`
-    : `<div class="pet-ph">${SPECIES_ICON[pet.species] || "🐾"}</div>`;
+    : `<div class="pet-ph">${petArt(pet.species)}</div>`;
   const facts = [pet.species, pet.breed, pet.age, pet.gender].filter(Boolean).join(" · ");
   let actions;
   if (mine) {
@@ -79,7 +79,7 @@ function petCard(pet, me, index) {
       <button class="btn sm ghost" type="button" data-pet="toggle" data-id="${esc(pet.id)}">${adopted ? "Mark available" : "Mark adopted"}</button>
       <button class="btn sm danger" type="button" data-pet="delete" data-id="${esc(pet.id)}">Remove</button>`;
   } else if (adopted) {
-    actions = `<span class="hint">Already adopted 🎉</span>`;
+    actions = `<span class="hint">Already adopted</span>`;
   } else {
     actions = `<button class="btn sm" type="button" data-pet="adopt" data-id="${esc(pet.id)}">Request to adopt</button>`;
   }
@@ -91,7 +91,7 @@ function petCard(pet, me, index) {
     <div class="pet-body">
       <h3>${esc(pet.name)}</h3>
       <p class="meta">${esc(facts)}</p>
-      <p class="meta">📍 ${esc(pet.location || "Location not given")}</p>
+      <p class="meta">${icon("pin")}${esc(pet.location || "Location not given")}</p>
       ${pet.description ? `<p class="desc">${esc(pet.description)}</p>` : ""}
       <p class="by">Listed by ${esc(owner?.displayName || "Emarni user")} · ${timeAgo(pet.createdAt)}</p>
       <div class="pet-acts">${actions}</div>
@@ -131,7 +131,7 @@ async function savePet(event) {
       photoPath: photo?.path || ""
     });
     $("#dlgPet").close();
-    toast("Listed for free adoption 🐾");
+    toast("Listed for free adoption");
   } catch (err) {
     toast(errMsg(err));
   } finally {

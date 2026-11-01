@@ -1,6 +1,7 @@
 // Shared whiteboard used inside a call. Strokes are stored in the call room and sync live.
 import * as fb from "./firebase.js";
 import { $, $$, toast, errMsg, COLORS } from "./ui.js";
+import { icon } from "./icons.js";
 
 const W = 1600;
 const H = 900;
@@ -19,7 +20,7 @@ const st = {
   mine: [], // ids of my strokes, for undo
   cur: null, // stroke I am drawing
   lastLive: 0,
-  color: "#67e8f9",
+  color: "#ffffff",
   width: 6,
   erase: false
 };
@@ -182,7 +183,7 @@ function paintTools() {
   $("#boardWidth").value = st.width;
   $("#boardErase").classList.toggle("on", st.erase);
   $("#boardLock").hidden = !st.host;
-  $("#boardLock").textContent = st.locked ? "🔓 Unlock board" : "🔒 Lock board";
+  $("#boardLock").innerHTML = `${icon(st.locked ? "unlock" : "lock")}<span>${st.locked ? "Unlock board" : "Lock board"}</span>`;
   $("#boardLock").classList.toggle("on", st.locked);
   $("#boardClear").textContent = st.host ? "Clear all" : "Clear mine";
   canvas.classList.toggle("readonly", !canDraw());
