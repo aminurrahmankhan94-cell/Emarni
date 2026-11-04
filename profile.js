@@ -87,10 +87,37 @@ function build() {
       </div>
 
       <section class="me-posts">
-        <h3>Post from your profile</h3>
-        <div id="meComposer"></div>
         <h3>My posts</h3>
+        <button class="btn" type="button" id="mePostToggle">＋ Create post</button>
+        <div id="meComposer" class="hidden"></div>
         <div id="myPosts"></div>
+      </section>
+      <section class="card-glass about-emarni">
+        <h2>About Emarni</h2>
+        <p class="about-tagline">Connecting People. Building a Better Digital Future.</p>
+        <p>Emarni is a messaging platform developed by Raflido Studios, a software company from Bangladesh dedicated to innovation and meaningful technological advancement.</p>
+        <p>The journey of Emarni began with a vision in 2024: to create a communication platform that brings people closer while promoting a safer, cleaner, and more respectful digital environment.</p>
+        <p>At Emarni, we believe technology should serve humanity and contribute to a better world. Our mission is to make communication accessible, secure, and meaningful for everyone.</p>
+        <h3>Our Mission</h3>
+        <p>Our mission is to create a digital environment where people can communicate freely and confidently without exposure to harmful or inappropriate activities.</p>
+        <p>Emarni is designed with security and user protection at its core. Through intelligent moderation bots and advanced security measures, we aim to prevent inappropriate activities and maintain a positive experience for our users.</p>
+        <p>We are committed to continuously improving our platform to make it more secure, reliable, and accessible.</p>
+        <h3>Our Vision</h3>
+        <p>We envision a future where communication is not limited by internet access or data costs.</p>
+        <p>By 2035, our goal is to enable people around the world to communicate without requiring a conventional mobile data package or internet subscription.</p>
+        <p>We believe that access to communication should be a fundamental part of a connected world, and we are working toward making this vision a reality.</p>
+        <h3>Emarni Radio &amp; TV</h3>
+        <p>As part of our long-term vision, Raflido Studios plans to introduce Emarni Radio &amp; TV, bringing satellite-based radio and television broadcasting to the Emarni platform.</p>
+        <p>Our goal is to make radio and television accessible to users without requiring mobile data or an internet connection.</p>
+        <p>We also envision a platform where users can create and operate their own radio and television stations, allowing them to share their creativity, ideas, and content with audiences around the world.</p>
+        <p>These initiatives represent our commitment to expanding the possibilities of digital communication and entertainment.</p>
+        <h3>Developed by Raflido Studios</h3>
+        <p>Emarni is proudly developed by Raflido Studios, a Bangladesh-based software company focused on building innovative digital products and technological solutions.</p>
+        <p>All intellectual property rights and copyrights associated with Emarni are owned by Raflido Studios.</p>
+        <h3>Our Commitment</h3>
+        <p>At Emarni, we are committed to building more than just a messaging application.</p>
+        <p>We are building a platform that brings people closer, encourages positive communication, and opens new possibilities for a connected digital future.</p>
+        <p class="about-signoff">Emarni — A New Era of Communication.<br>Developed by Raflido Studios.</p>
       </section>
     </div>`;
 
@@ -122,7 +149,14 @@ function build() {
   bindDrag($("#pfCover"), "coverPos");
   bindDrag($("#pfAv"), "avatarPos");
 
-  mountComposer($("#meComposer"));
+  const composerRoot = $("#meComposer");
+  $("#mePostToggle").addEventListener("click", () => {
+    const opening = composerRoot.classList.contains("hidden");
+    composerRoot.classList.toggle("hidden", !opening);
+    $("#mePostToggle").textContent = opening ? "− Close post composer" : "＋ Create post";
+    if (opening) composerRoot.querySelector("textarea")?.focus();
+  });
+  mountComposer(composerRoot);
   myPosts = new PostList($("#myPosts"), {
     source: "user",
     uid: ctx.me().uid,

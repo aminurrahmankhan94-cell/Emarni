@@ -971,3 +971,10 @@ i[data-icon] .ico { width: 100%; height: 100%; }
   .stat-grid { grid-template-columns: 1fr 1fr; }
   .fog i { filter: blur(60px); }
 }
+.about-emarni { padding: 22px; line-height: 1.7; }
+.about-emarni h2 { margin: 0 0 4px; }
+.about-emarni h3 { margin: 20px 0 6px; }
+.about-emarni p { margin: 8px 0; color: var(--muted, inherit); }
+.about-emarni .about-tagline { font-weight: 700; color: var(--text, inherit); }
+.about-emarni .about-signoff { font-weight: 700; margin-top: 20px; }
+#mePostToggle { justify-self: start; }
