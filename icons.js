@@ -40,6 +40,14 @@ const PATHS = {
   userplus: '<circle cx="10" cy="8.5" r="4"/><path d="M3 20.5c.5-3.5 3.3-5.7 7-5.7s6.5 2.2 7 5.7M19 8v6M16 11h6"/>',
   chevright: '<path d="M9.5 5.5l6.5 6.5-6.5 6.5"/>',
   record: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.6" fill="currentColor"/>',
+  bell: '<path d="M6 16.5V11a6 6 0 1 1 12 0v5.5l1.5 2h-15l1.5-2Z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+  calc: '<rect x="5" y="3.5" width="14" height="17" rx="2.5"/><path d="M8.5 7.5h7M8.5 12.5h1.5M12.5 12.5h1.5M8.5 16h1.5M12.5 16h1.5"/>',
+  type: '<path d="M5 6.5V5h14v1.5M12 5v14M9 19h6"/>',
+  line: '<path d="M5 19L19 5"/>',
+  arrow: '<path d="M5 19L19 5M11 5h8v8"/>',
+  rect: '<rect x="4.5" y="6.5" width="15" height="11" rx="1.5"/>',
+  circle: '<circle cx="12" cy="12" r="7.5"/>',
+  grid: '<path d="M4 9h16M4 15h16M9 4v16M15 4v16"/>',
   dot: '<circle cx="12" cy="12" r="3"/>'
 };
 

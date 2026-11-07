@@ -1,4 +1,4 @@
-# Emarni Chat (v2)
+# Emarni Chat (v6)
 
 Static web app (no build step). Put these files in your GitHub repo root and enable GitHub Pages, or serve the folder with any static server.
 
@@ -53,3 +53,21 @@ Static web app (no build step). Put these files in your GitHub repo root and ena
 - Group messages and deleted-message safety copies follow the same 30-day rule as direct messages. The admin panel lists them under deleted items, but opening a group conversation from inside the admin panel is not built yet.
 - Payment is manual (transaction ID plus admin approval). Connecting an automatic payment gateway needs a server-side function.
 - Messages and posts are not end-to-end encrypted. The safety notice shown on first sign-in says so.
+
+
+## What's new in v6
+
+- **Loader and logo**: the old letter logo is replaced by a black disc with a red spiral that turns. It is shown on the loader, the sidebar, the sign-in page and the About page.
+- **Notifications**: new messages (private and group) and calls notify you inside the app, with a short chime, an in-app card, and an unread badge on each chat. When the app is in the background, a browser or phone notification is shown. Turn them on with the bell button in the Chats panel.
+- **Whiteboard tools**: typed text, line, arrow, rectangle and circle, eraser, grid and graph paper, a scientific calculator (its result can be placed on the board), undo, clear, and a teacher lock.
+- **About Emarni**: its own page in the sidebar, and a link from the profile.
+- **Photos and videos**: phone files with a missing type, HEIC photos, and large photos are handled. Videos up to 150 MB are accepted.
+- **Create post**: the profile's Create post button opens a Facebook-style dialog with text, photo, video, audio and voice notes.
+
+## Setup for v6
+
+1. Replace the repo files with the files in this version. Keep `admin.html` and `admin.js` as they are.
+2. Storage: Firebase console > Storage > Rules. Paste `storage.rules` and **Publish**. (The limits changed.)
+3. The database rules did not change. Only publish `database.rules.json` if you have not published it before.
+4. `sw.js` must stay in the repository root. It shows notifications on phones and opens the app when a notification is tapped.
+5. Open the app, press the bell button in the Chats panel, and allow notifications.

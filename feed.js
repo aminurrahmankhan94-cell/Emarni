@@ -1,6 +1,7 @@
 // Posts: a reusable composer and post list, used by the Feed and by every profile.
 import * as fb from "./firebase.js";
-import { $, esc, toast, avatarHTML, timeAgo, busy, errMsg, fileKind, LIMIT_MB, askText, pop, shrinkImage } from "./ui.js";
+import { $, esc, toast, avatarHTML, timeAgo, busy, errMsg, askText, pop } from "./ui.js";
+import { kindOf, checkSize, prepareUpload } from "./media.js";
 import { icon } from "./icons.js";
 
 let ctx = null;
@@ -353,9 +354,15 @@ export function mountComposer(root) {
     if (!file) {
       pending = null;
     } else {
-      const kind = fileKind(file);
-      if (!kind) return toast("Choose a photo, video or audio file");
-      if (file.size > LIMIT_MB[kind] * 1048576) return toast(`${kind} files must be under ${LIMIT_MB[kind]} MB`);
+      const kind = kindOf(file);
+      if (kind === "file") return toast("Choose a photo, video or audio file");
+      if (kind !== "image") {
+        try {
+          checkSize(file, kind);
+        } catch (err) {
+          return toast(errMsg(err));
+        }
+      }
       pending = { file, kind };
     }
     preview.classList.toggle("hidden", !pending);
@@ -396,7 +403,7 @@ export function mountComposer(root) {
     recorder.onstop = () => {
       stream.getTracks().forEach(track => track.stop());
       const type = recorder.mimeType || "audio/webm";
-      const ext = type.includes("ogg") ? "ogg" : "webm";
+      const ext = type.includes("ogg") ? "ogg" : type.includes("mp4") ? "m4a" : "webm";
       const file = new File([new Blob(chunks, { type })], `voice-${Date.now()}.${ext}`, { type });
       recorder = null;
       setRecLabel(false);
@@ -416,8 +423,8 @@ export function mountComposer(root) {
       if (pending) {
         bar.classList.remove("hidden");
         bar.firstElementChild.style.width = "0%";
-        const upload = pending.kind === "image" ? await shrinkImage(pending.file, 1600) : pending.file;
-        media = await fb.uploadFile(`media/${ctx.me().uid}`, upload, pct => {
+        const ready = await prepareUpload(pending.file, pending.kind);
+        media = await fb.uploadFile(`media/${ctx.me().uid}`, ready.file, pct => {
           bar.firstElementChild.style.width = `${Math.round(pct * 100)}%`;
         });
       }

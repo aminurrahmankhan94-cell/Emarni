@@ -4,22 +4,24 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#050505">
-  <meta name="description" content="Emarni Chat: friends, groups, feed, pet adoption, ads, and audio or video calls with a shared whiteboard.">
+  <meta name="description" content="Emarni: friends, groups, feed, pet adoption, ads, and audio or video calls with a shared whiteboard.">
   <title>Emarni Chat</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=11">
+  <link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
   <div class="fog" aria-hidden="true"><i></i><i></i><i></i></div>
 
-  <!-- Loading screen: red mist, a turning ring and a glowing core -->
+  <!-- Loader: the spiral mark turns inside a red mist -->
   <div class="splash" id="splash" aria-live="polite">
     <div class="mist" aria-hidden="true"><i></i><i></i><i></i></div>
-    <div class="loader" aria-hidden="true">
-      <span class="lr lr1"></span><span class="lr lr2"></span><span class="lr lr3"></span>
-      <div class="core"><span>E</span><b class="sheen"></b></div>
+    <div class="splash-stage" aria-hidden="true">
+      <span class="halo"></span>
+      <span class="trail t1"></span>
+      <span class="trail t2"></span>
+      <div class="splash-brand" data-brand></div>
     </div>
     <h1 class="brand" id="brand">EMARNI</h1>
     <p class="splash-msg" id="splashMsg">Warming up</p>
@@ -29,6 +31,7 @@
   <!-- Sign in / register -->
   <section class="auth hidden" id="authView">
     <div class="card">
+      <div class="auth-mark" data-brand></div>
       <div class="seg" role="tablist">
         <button type="button" class="on" data-mode="login">Sign in</button>
         <button type="button" data-mode="register">Create account</button>
@@ -50,15 +53,16 @@
   <!-- Signed-in app -->
   <div class="shell hidden" id="appView">
     <aside class="rail">
-      <div class="logo sm" aria-hidden="true">E</div>
+      <div class="rail-mark" data-brand></div>
       <nav class="navs">
-        <button class="nav on" type="button" data-nav="chats"><i data-icon="chat"></i><span>Chats</span></button>
+        <button class="nav on" type="button" data-nav="chats"><i data-icon="chat"></i><span>Chats</span><b class="nav-badge hidden" id="chatsBadge">0</b></button>
         <button class="nav" type="button" data-nav="feed"><i data-icon="sparkle"></i><span>Feed</span></button>
         <button class="nav" type="button" data-nav="adopt"><i data-icon="paw"></i><span>Adopt</span></button>
         <button class="nav" type="button" data-nav="ads"><i data-icon="megaphone"></i><span>Ads</span></button>
         <button class="nav" type="button" data-nav="me"><i data-icon="user"></i><span>Me</span></button>
       </nav>
       <div class="rail-foot">
+        <button class="nav" type="button" data-nav="about"><i data-icon="info"></i><span>About</span></button>
         <button class="nav" type="button" id="adminNav" hidden><i data-icon="shield"></i><span>Admin</span></button>
         <button class="nav" type="button" data-signout><i data-icon="power"></i><span>Sign out</span></button>
       </div>
@@ -69,7 +73,11 @@
       <!-- Chats: people search, requests, groups, friends, conversations -->
       <section class="view on" id="chats" data-view="chats">
         <aside class="side">
-          <div class="me-row"><div class="me" id="meBox"></div><button class="icon-btn sm" id="monitorBtn" type="button" title="Conversation monitor" aria-label="Conversation monitor" hidden><i data-icon="shield"></i></button></div>
+          <div class="me-row">
+            <div class="me" id="meBox"></div>
+            <button class="icon-btn sm notify-btn" id="notifyBtn" type="button" aria-label="Turn on notifications"><i data-icon="bell"></i></button>
+            <button class="icon-btn sm" id="monitorBtn" type="button" title="Conversation monitor" aria-label="Conversation monitor" hidden><i data-icon="shield"></i></button>
+          </div>
           <div class="search-box">
             <i data-icon="search"></i>
             <input id="peopleSearch" type="search" placeholder="Search people by name or ID" autocomplete="off" maxlength="40">
@@ -189,9 +197,77 @@
           <h3 class="sec-title">My requests</h3>
           <ul class="list plain" id="myAds"></ul>
           <section class="hidden" id="adminAdsWrap">
-            <h3 class="sec-title">Pending approvals</h3>
+            <h3 class="sec-title">Admin: approvals and controls</h3>
             <div class="admin-box" id="adminAds"></div>
           </section>
+        </div>
+      </section>
+
+      <!-- Profile (built by profile.js) -->
+      <section class="view" data-view="me" id="meView"></section>
+
+      <!-- About Emarni -->
+      <section class="view" data-view="about" id="aboutView">
+        <div class="about">
+          <header class="about-hero card-glass">
+            <div class="about-brand" data-brand></div>
+            <h1>About Emarni</h1>
+            <p class="about-tagline">Connecting People. Building a Better Digital Future.</p>
+            <div class="about-actions">
+              <button class="btn ghost sm" type="button" data-go="me"><i data-icon="back"></i>Back to profile</button>
+            </div>
+          </header>
+
+          <div class="about-grid">
+            <article class="about-card card-glass">
+              <span class="ab-ic"><i data-icon="users"></i></span>
+              <h2>Who we are</h2>
+              <p>Emarni is a messaging platform developed by Raflido Studios, a software company from Bangladesh dedicated to innovation and meaningful technological advancement.</p>
+              <p>The journey of Emarni began with a vision in 2024: to create a communication platform that brings people closer while promoting a safer, cleaner, and more respectful digital environment.</p>
+              <p>At Emarni, we believe technology should serve humanity and contribute to a better world. Our mission is to make communication accessible, secure, and meaningful for everyone.</p>
+            </article>
+
+            <article class="about-card card-glass">
+              <span class="ab-ic"><i data-icon="shield"></i></span>
+              <h2>Our Mission</h2>
+              <p>Our mission is to create a digital environment where people can communicate freely and confidently without exposure to harmful or inappropriate activities.</p>
+              <p>Emarni is designed with security and user protection at its core. Through intelligent moderation bots and advanced security measures, we aim to prevent inappropriate activities and maintain a positive experience for our users.</p>
+              <p>We are committed to continuously improving our platform to make it more secure, reliable, and accessible.</p>
+            </article>
+
+            <article class="about-card card-glass">
+              <span class="ab-ic"><i data-icon="sparkle"></i></span>
+              <h2>Our Vision</h2>
+              <p>We envision a future where communication is not limited by internet access or data costs.</p>
+              <p>By 2035, our goal is to enable people around the world to communicate without requiring a conventional mobile data package or internet subscription.</p>
+              <p>We believe that access to communication should be a fundamental part of a connected world, and we are working toward making this vision a reality.</p>
+            </article>
+
+            <article class="about-card about-wide card-glass">
+              <span class="ab-ic"><i data-icon="megaphone"></i></span>
+              <h2>Emarni Radio &amp; TV</h2>
+              <p>As part of our long-term vision, Raflido Studios plans to introduce Emarni Radio &amp; TV, bringing satellite-based radio and television broadcasting to the Emarni platform.</p>
+              <p>Our goal is to make radio and television accessible to users without requiring mobile data or an internet connection.</p>
+              <p>We also envision a platform where users can create and operate their own radio and television stations, allowing them to share their creativity, ideas, and content with audiences around the world.</p>
+              <p>These initiatives represent our commitment to expanding the possibilities of digital communication and entertainment.</p>
+            </article>
+
+            <article class="about-card card-glass">
+              <span class="ab-ic"><i data-icon="info"></i></span>
+              <h2>Developed by Raflido Studios</h2>
+              <p>Emarni is proudly developed by Raflido Studios, a Bangladesh-based software company focused on building innovative digital products and technological solutions.</p>
+              <p>All intellectual property rights and copyrights associated with Emarni are owned by Raflido Studios.</p>
+            </article>
+
+            <article class="about-card card-glass">
+              <span class="ab-ic"><i data-icon="heart"></i></span>
+              <h2>Our Commitment</h2>
+              <p>At Emarni, we are committed to building more than just a messaging application.</p>
+              <p>We are building a platform that brings people closer, encourages positive communication, and opens new possibilities for a connected digital future.</p>
+            </article>
+          </div>
+
+          <p class="about-sign">Emarni — A New Era of Communication.<br>Developed by Raflido Studios.</p>
         </div>
       </section>
 
@@ -220,9 +296,6 @@
           </div>
         </div>
       </section>
-
-      <!-- Profile (built by profile.js) -->
-      <section class="view" data-view="me" id="meView"></section>
     </main>
 
     <nav class="tabbar" aria-label="Main">
@@ -262,12 +335,26 @@
       <div class="tiles" id="tiles"></div>
       <aside class="board-panel" id="boardPanel">
         <div class="board-tools">
-          <div class="swatches" id="boardColors"></div>
-          <label class="range">Size <input type="range" id="boardWidth" min="2" max="28" value="6"></label>
-          <button class="chip" type="button" id="boardErase"><i data-icon="eraser"></i>Eraser</button>
-          <button class="chip" type="button" id="boardUndo"><i data-icon="undo"></i>Undo</button>
-          <button class="chip" type="button" id="boardClear"><i data-icon="trash"></i>Clear mine</button>
-          <button class="chip" type="button" id="boardLock" hidden><i data-icon="lock"></i>Lock board</button>
+          <div class="tool-row">
+            <button class="tool on" type="button" data-tool="pen" title="Pen" aria-label="Pen"><i data-icon="pen"></i></button>
+            <button class="tool" type="button" data-tool="text" title="Type text" aria-label="Type text"><i data-icon="type"></i></button>
+            <button class="tool" type="button" data-tool="line" title="Line" aria-label="Line"><i data-icon="line"></i></button>
+            <button class="tool" type="button" data-tool="arrow" title="Arrow" aria-label="Arrow"><i data-icon="arrow"></i></button>
+            <button class="tool" type="button" data-tool="rect" title="Rectangle" aria-label="Rectangle"><i data-icon="rect"></i></button>
+            <button class="tool" type="button" data-tool="circle" title="Circle" aria-label="Circle"><i data-icon="circle"></i></button>
+            <button class="tool" type="button" data-tool="erase" title="Eraser" aria-label="Eraser"><i data-icon="eraser"></i></button>
+          </div>
+          <div class="tool-row">
+            <div class="swatches" id="boardColors"></div>
+            <label class="range">Size <input type="range" id="boardWidth" min="2" max="28" value="6"></label>
+          </div>
+          <div class="tool-row">
+            <button class="chip" type="button" id="boardGrid"></button>
+            <button class="chip" type="button" id="boardCalc"><i data-icon="calc"></i><span>Calculator</span></button>
+            <button class="chip" type="button" id="boardUndo"><i data-icon="undo"></i><span>Undo</span></button>
+            <button class="chip" type="button" id="boardClear"><i data-icon="trash"></i><span>Clear mine</span></button>
+            <button class="chip" type="button" id="boardLock" hidden><i data-icon="lock"></i><span>Lock board</span></button>
+          </div>
         </div>
         <div class="board-paper"><canvas id="board"></canvas></div>
         <p class="hint" id="boardNote"></p>
@@ -295,7 +382,42 @@
     </div>
   </section>
 
-  <!-- Dialogs -->
+  <!-- Notifications (in-app cards) -->
+  <div class="notice-stack" id="noticeStack" aria-live="polite"></div>
+
+  <!-- Create post (Facebook style) -->
+  <dialog id="dlgPost" class="sheet post-dlg">
+    <form id="pbForm" class="pb" novalidate>
+      <header class="pb-head">
+        <h2>Create post</h2>
+        <button class="icon-btn sm" type="button" data-close aria-label="Close"><i data-icon="x"></i></button>
+      </header>
+      <div class="pb-user">
+        <div id="pbAv"></div>
+        <div class="pb-meta"><b id="pbName"></b><small><i data-icon="users"></i>Public</small></div>
+      </div>
+      <textarea id="pbText" class="pb-text" rows="4" maxlength="2000" placeholder="What's on your mind?"></textarea>
+      <div class="pb-preview hidden" id="pbPreview"></div>
+      <div class="progress hidden" id="pbProg"><i></i></div>
+      <div class="pb-add">
+        <span>Add to your post</span>
+        <div class="pb-tools">
+          <button type="button" class="pb-tool" data-pb="image"><i data-icon="image"></i>Photo</button>
+          <button type="button" class="pb-tool" data-pb="video"><i data-icon="film"></i>Video</button>
+          <button type="button" class="pb-tool" data-pb="audio"><i data-icon="music"></i>Audio</button>
+          <button type="button" class="pb-tool" id="pbRec"><i data-icon="mic"></i>Voice</button>
+        </div>
+      </div>
+      <input type="file" id="pbFile" hidden>
+      <p class="error" id="pbErr" role="alert"></p>
+      <div class="row between">
+        <span class="hint">Photo 10 MB · Video 150 MB · Audio 20 MB</span>
+        <button class="btn" id="pbSubmit" type="submit" disabled>Post</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Other dialogs -->
   <dialog id="dlgNotice">
     <div class="fields">
       <h2>Before you continue</h2>
@@ -313,7 +435,7 @@
   <dialog id="dlgText" class="sheet">
     <form id="dlgTextForm" class="fields">
       <h2 id="dlgTextTitle">Enter text</h2>
-      <textarea id="dlgTextInput" rows="3" maxlength="200"></textarea>
+      <textarea id="dlgTextInput" rows="3" maxlength="300"></textarea>
       <div class="row">
         <button class="link" type="button" id="dlgTextCancel">Cancel</button>
         <button class="btn" type="submit" id="dlgTextOk">Send</button>
@@ -432,6 +554,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="app.js?v=11"></script>
+  <script type="module" src="app.js?v=12"></script>
 </body>
 </html>

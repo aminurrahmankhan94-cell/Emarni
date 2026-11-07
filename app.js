@@ -1,7 +1,8 @@
-// Emarni: app shell. Splash, sign-in, navigation, friends, groups, and wiring for every feature.
+// Emarni: app shell. Loader, sign-in, navigation, friends, groups, notifications, and the feature modules.
 import * as fb from "./firebase.js";
 import { $, $$, esc, toast, busy, errMsg, avatarHTML, wireDialogs, openDialog } from "./ui.js";
 import { icon, hydrate } from "./icons.js";
+import { mountBrands } from "./brand.js";
 import { initFeed, refreshFeed } from "./feed.js";
 import { initMarket, refreshMarket, onMarketShow } from "./market.js";
 import { initProfile, onProfileShow } from "./profile.js";
@@ -9,6 +10,8 @@ import { initCalls } from "./call.js";
 import { initChat, openDm, openGroup, openNewGroup, refreshChatHead } from "./chat.js";
 import { initPeople, openUser, refreshPeople } from "./people.js";
 import { initMonitor, onMonitorShow } from "./monitor.js";
+import { initPostbox } from "./postbox.js";
+import { initNotify, syncRooms, unreadFor, totalUnread, enableNotifications, permissionState } from "./notify.js";
 
 const S = {
   me: null,
@@ -18,13 +21,13 @@ const S = {
   dir: {}, // emarniId -> public profile
   byUid: {}, // uid -> public profile
   friends: {}, // uid -> { status }
-  sent: {}, // uid -> { status } requests I sent
+  sent: {}, // uid -> request I sent
   requests: {}, // uid -> request sent to me
   groups: {}, // gid -> { name, color }
   unsubs: []
 };
 
-// ---------- Splash ----------
+// ---------- Loader ----------
 const SPLASH_LINES = ["Warming up", "Securing your connection", "Syncing chats and friends", "Almost there"];
 let splashTimer = 0;
 
@@ -155,6 +158,7 @@ async function enter(user) {
   fb.syncAccount(user).catch(() => {});
   S.isAdmin = (await fb.checkAdmin(user)) === "ok";
   $("#adminNav").hidden = !S.isAdmin;
+  $("#monitorBtn").hidden = !S.isAdmin;
   showApp();
   watchLists(user.uid);
 
@@ -186,9 +190,11 @@ async function enter(user) {
   initCalls(ctx);
   initPeople(ctx);
   initMonitor(ctx);
-  $("#monitorBtn").hidden = !S.isAdmin;
+  initPostbox(ctx);
+  initNotify(ctx, refreshBadges);
   go("chats");
   renderMe();
+  paintNotifyButton();
 
   if (await fb.needsNotice().catch(() => false)) openDialog("#dlgNotice");
 }
@@ -208,6 +214,7 @@ function watchLists(uid) {
       refreshMarket();
       refreshChatHead();
       refreshPeople();
+      syncRoomsNow();
     })
   );
   S.unsubs.push(
@@ -216,6 +223,7 @@ function watchLists(uid) {
       renderFriends();
       refreshPeople();
       refreshFeed();
+      syncRoomsNow();
     })
   );
   S.unsubs.push(
@@ -236,8 +244,68 @@ function watchLists(uid) {
       S.groups = groups;
       renderGroups();
       refreshChatHead();
+      syncRoomsNow();
     })
   );
+}
+
+// Every friend conversation and group is watched for new messages, so notifications work in any chat.
+function syncRoomsNow() {
+  if (!S.me) return;
+  const rooms = [];
+  friendUids().forEach(uid => {
+    const id = fb.roomIdFor(S.me.uid, uid);
+    rooms.push({
+      key: `dm:${id}`,
+      kind: "dm",
+      id,
+      uid,
+      title: S.byUid[uid]?.displayName || "Friend",
+      open: () => {
+        go("chats");
+        openDm(uid);
+      }
+    });
+  });
+  Object.entries(S.groups).forEach(([gid, g]) => {
+    rooms.push({
+      key: `group:${gid}`,
+      kind: "group",
+      id: gid,
+      title: g.name || "Group",
+      open: () => {
+        go("chats");
+        openGroup(gid, g.name || "Group");
+      }
+    });
+  });
+  syncRooms(rooms).catch(() => {});
+}
+
+// Called when unread counts change.
+function refreshBadges() {
+  renderFriends();
+  renderGroups();
+  updateNavBadge();
+}
+
+function updateNavBadge() {
+  const n = totalUnread();
+  const badge = $("#chatsBadge");
+  badge.textContent = n > 99 ? "99+" : String(n);
+  badge.classList.toggle("hidden", n === 0);
+}
+
+function paintNotifyButton() {
+  const state = permissionState();
+  const btn = $("#notifyBtn");
+  btn.classList.toggle("on", state === "granted");
+  btn.title =
+    state === "granted"
+      ? "Notifications are on"
+      : state === "denied"
+        ? "Notifications are blocked. Allow them in the browser settings."
+        : "Turn on notifications";
 }
 
 // ---------- Side panel rendering ----------
@@ -269,6 +337,8 @@ function renderRequests() {
     .join("");
 }
 
+const badgeHTML = n => (n ? `<span class="ubadge">${n > 99 ? "99+" : n}</span>` : "");
+
 function renderGroups() {
   const entries = Object.entries(S.groups).sort((a, b) => String(a[1].name).localeCompare(String(b[1].name)));
   $("#groupList").innerHTML = entries.length
@@ -277,20 +347,24 @@ function renderGroups() {
           ([gid, g]) => `<li class="item" data-gid="${esc(gid)}">
             <span class="dot" style="background:${esc(g.color || "#ef4444")}"></span>
             <div class="grow"><b>${esc(g.name)}</b><small>Group chat</small></div>
+            ${badgeHTML(unreadFor(`group:${gid}`))}
           </li>`
         )
         .join("")
     : `<li class="none">No groups yet</li>`;
+  updateNavBadge();
 }
 
 function renderFriends() {
   const list = friendProfiles();
+  const me = S.me?.uid;
   $("#friendList").innerHTML = list.length
     ? list
         .map(
           p => `<li class="item" data-uid="${esc(p.uid)}">
             ${avatarHTML(p, "sm")}
             <div class="grow"><b>${esc(p.displayName)}</b><small>${esc(p.status || p.emarniId)}</small></div>
+            ${badgeHTML(unreadFor(`dm:${fb.roomIdFor(me, p.uid)}`))}
           </li>`
         )
         .join("")
@@ -304,6 +378,11 @@ function wire() {
   $("#forgot").addEventListener("click", forgotPassword);
 
   $$("[data-nav]").forEach(btn => btn.addEventListener("click", () => go(btn.dataset.nav)));
+  // Any element with data-go (for example the About link on the profile) opens that view.
+  document.addEventListener("click", event => {
+    const target = event.target.closest("[data-go]");
+    if (target) go(target.dataset.go);
+  });
   $$("[data-signout]").forEach(btn =>
     btn.addEventListener("click", async () => {
       await fb.signOutAccount().catch(() => {});
@@ -312,6 +391,13 @@ function wire() {
   );
   $("#adminNav").addEventListener("click", () => {
     location.href = "admin.html";
+  });
+  $("#monitorBtn").addEventListener("click", () => go("monitor"));
+
+  $("#notifyBtn").addEventListener("click", async () => {
+    if (permissionState() === "granted") return toast("Notifications are already on");
+    await enableNotifications();
+    paintNotifyButton();
   });
 
   $("#reqList").addEventListener("click", async event => {
@@ -334,7 +420,6 @@ function wire() {
     if (row) openGroup(row.dataset.gid, S.groups[row.dataset.gid]?.name || "Group");
   });
   $("#newGroup").addEventListener("click", openNewGroup);
-  $("#monitorBtn").addEventListener("click", () => go("monitor"));
 
   $("#noticeOk").addEventListener("click", async () => {
     const btn = $("#noticeOk");
@@ -357,6 +442,7 @@ function boot() {
   buildBrand();
   startSplash();
   hydrate();
+  mountBrands();
   wire();
   fb.watchAuth(async user => {
     if (!user) {

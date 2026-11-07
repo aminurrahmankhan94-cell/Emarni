@@ -4,6 +4,7 @@ import * as fb from "./firebase.js";
 import { $, toast, avatarHTML, errMsg } from "./ui.js";
 import { icon } from "./icons.js";
 import { initBoardUi, openBoard, closeBoard, toggleBoardPanel } from "./board.js";
+import { notifyIncoming, notifyMissed } from "./notify.js";
 import { initRingtone, startRing, stopRing, startRingback, stopRingback, unlockSound, soundReady, onSoundChange } from "./ringtone.js";
 
 // For calls across strict networks, add a TURN server here:
@@ -177,6 +178,7 @@ function handleInvite(rid, invite) {
 }
 
 function showRing(rid, invite) {
+  notifyIncoming(invite);
   ringing.rid = rid;
   const caller = ctx.author(invite.from) || { displayName: invite.fromName };
   $("#ringAv").innerHTML = avatarHTML(caller, "xl");
@@ -470,6 +472,7 @@ function noAnswer() {
 }
 
 function missedCall(rid, invite) {
+  notifyMissed(invite);
   toast(`Missed ${invite.type === "video" ? "video" : "audio"} call from ${invite.fromName || "someone"}`, 4200);
   declineCall(rid);
 }

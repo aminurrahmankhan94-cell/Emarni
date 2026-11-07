@@ -97,3 +97,27 @@ export const startRingback = () => startRing("ringback");
 export function stopRingback() {
   if (current === "ringback") stopRing();
 }
+
+// Short two-note chime for a new message. Silent until the page has been tapped once.
+let lastChime = 0;
+export function ping() {
+  const a = audio();
+  if (!a || a.state !== "running") return;
+  const now = Date.now();
+  if (now - lastChime < 600) return;
+  lastChime = now;
+  const t = a.currentTime;
+  [880, 1174].forEach((freq, i) => {
+    const start = t + i * 0.12;
+    const osc = a.createOscillator();
+    const gain = a.createGain();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.16, start + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.3);
+    osc.connect(gain).connect(a.destination);
+    osc.start(start);
+    osc.stop(start + 0.32);
+  });
+}

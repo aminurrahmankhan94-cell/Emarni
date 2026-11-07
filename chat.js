@@ -4,6 +4,8 @@ import * as fb from "./firebase.js";
 import { $, esc, toast, busy, errMsg, avatarHTML, askText, timeOf, initials, COLORS, openDialog, shrinkImage } from "./ui.js";
 import { icon } from "./icons.js";
 import { startCall } from "./call.js";
+import { kindOf, checkSize, prepareUpload } from "./media.js";
+import { setActiveRoom, markRead } from "./notify.js";
 
 const LIMIT = { image: 10, video: 50, audio: 20, file: 25 };
 const REACTIONS = ["heart", "check", "sparkle"];
@@ -26,7 +28,10 @@ let ctx = null;
 // ctx: { me(), byUid(uid), friends(), groupColor(gid), openUser(uid) }
 export function initChat(context) {
   ctx = context;
-  $("#backBtn").addEventListener("click", () => $("#chats").classList.remove("chatting"));
+  $("#backBtn").addEventListener("click", () => {
+    setActiveRoom(null);
+    $("#chats").classList.remove("chatting");
+  });
   $("#chatActs").addEventListener("click", event => {
     const call = event.target.closest("[data-call]");
     if (call) return callFromChat(call.dataset.call);
@@ -86,6 +91,9 @@ function openChat(chat) {
   $("#chatSearchInput").value = "";
   $("#chatSearch").classList.add("hidden");
   setReply(null);
+  const roomKey = chat.type === "dm" ? `dm:${chat.id}` : `group:${chat.id}`;
+  setActiveRoom(roomKey);
+  markRead(roomKey);
   $("#emptyChat").classList.add("hidden");
   $("#chatBox").classList.remove("hidden");
   $("#chats").classList.add("chatting");
@@ -330,21 +338,19 @@ async function sendText(event) {
   }
 }
 
-function kindOf(file) {
-  if (file.type.startsWith("image/")) return "image";
-  if (file.type.startsWith("video/")) return "video";
-  if (file.type.startsWith("audio/")) return "audio";
-  return "file";
-}
-
 async function onFile(event) {
   const file = event.target.files[0];
   event.target.value = "";
   const chat = C.chat;
   if (!file || !chat) return;
   const kind = kindOf(file);
-  if (file.size > LIMIT[kind] * 1048576) {
-    return toast(`This ${kind === "file" ? "file" : kind} must be under ${LIMIT[kind]} MB`);
+  if (kind === "file" && file.size === 0) return toast("This file is empty");
+  if (kind !== "image") {
+    try {
+      checkSize(file, kind);
+    } catch (err) {
+      return toast(errMsg(err));
+    }
   }
   const bar = $("#chatProg");
   const btn = $("#attachBtn");
@@ -353,8 +359,8 @@ async function onFile(event) {
   bar.firstElementChild.style.width = "0%";
   btn.disabled = true;
   try {
-    const upload = kind === "image" ? await shrinkImage(file, 1600) : file;
-    const sent = await fb.uploadFile(`chatfiles/${ctx.me().uid}`, upload, pct => {
+    const ready = await prepareUpload(file, kind);
+    const sent = await fb.uploadFile(`chatfiles/${ctx.me().uid}`, ready.file, pct => {
       bar.firstElementChild.style.width = `${Math.round(pct * 100)}%`;
     });
     await fb.sendChatMessage(
@@ -364,8 +370,8 @@ async function onFile(event) {
         fileURL: sent.url,
         filePath: sent.path,
         fileName: file.name,
-        fileSize: upload.size,
-        fileType: upload.type,
+        fileSize: ready.file.size,
+        fileType: ready.file.type,
         replyTo
       },
       ctx.me()

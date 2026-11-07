@@ -2,7 +2,8 @@
 import * as fb from "./firebase.js";
 import { $, $$, esc, toast, busy, errMsg, COLORS, LIMIT_MB, clamp, initials, accentOf, posStyle, shrinkImage } from "./ui.js";
 import { icon } from "./icons.js";
-import { PostList, mountComposer } from "./feed.js";
+import { PostList } from "./feed.js";
+import { prepareUpload } from "./media.js";
 
 let ctx = null;
 let built = false;
@@ -87,38 +88,11 @@ function build() {
       </div>
 
       <section class="me-posts">
+        <button class="post-trigger card-glass" type="button" data-open-post><span class="pt-ic">${icon("plus")}</span><span class="pt-text">What's on your mind?</span><span class="pt-tools">${icon("image")}${icon("film")}${icon("mic")}</span></button>
         <h3>My posts</h3>
-        <button class="btn" type="button" id="mePostToggle">＋ Create post</button>
-        <div id="meComposer" class="hidden"></div>
         <div id="myPosts"></div>
       </section>
-      <section class="card-glass about-emarni">
-        <h2>About Emarni</h2>
-        <p class="about-tagline">Connecting People. Building a Better Digital Future.</p>
-        <p>Emarni is a messaging platform developed by Raflido Studios, a software company from Bangladesh dedicated to innovation and meaningful technological advancement.</p>
-        <p>The journey of Emarni began with a vision in 2024: to create a communication platform that brings people closer while promoting a safer, cleaner, and more respectful digital environment.</p>
-        <p>At Emarni, we believe technology should serve humanity and contribute to a better world. Our mission is to make communication accessible, secure, and meaningful for everyone.</p>
-        <h3>Our Mission</h3>
-        <p>Our mission is to create a digital environment where people can communicate freely and confidently without exposure to harmful or inappropriate activities.</p>
-        <p>Emarni is designed with security and user protection at its core. Through intelligent moderation bots and advanced security measures, we aim to prevent inappropriate activities and maintain a positive experience for our users.</p>
-        <p>We are committed to continuously improving our platform to make it more secure, reliable, and accessible.</p>
-        <h3>Our Vision</h3>
-        <p>We envision a future where communication is not limited by internet access or data costs.</p>
-        <p>By 2035, our goal is to enable people around the world to communicate without requiring a conventional mobile data package or internet subscription.</p>
-        <p>We believe that access to communication should be a fundamental part of a connected world, and we are working toward making this vision a reality.</p>
-        <h3>Emarni Radio &amp; TV</h3>
-        <p>As part of our long-term vision, Raflido Studios plans to introduce Emarni Radio &amp; TV, bringing satellite-based radio and television broadcasting to the Emarni platform.</p>
-        <p>Our goal is to make radio and television accessible to users without requiring mobile data or an internet connection.</p>
-        <p>We also envision a platform where users can create and operate their own radio and television stations, allowing them to share their creativity, ideas, and content with audiences around the world.</p>
-        <p>These initiatives represent our commitment to expanding the possibilities of digital communication and entertainment.</p>
-        <h3>Developed by Raflido Studios</h3>
-        <p>Emarni is proudly developed by Raflido Studios, a Bangladesh-based software company focused on building innovative digital products and technological solutions.</p>
-        <p>All intellectual property rights and copyrights associated with Emarni are owned by Raflido Studios.</p>
-        <h3>Our Commitment</h3>
-        <p>At Emarni, we are committed to building more than just a messaging application.</p>
-        <p>We are building a platform that brings people closer, encourages positive communication, and opens new possibilities for a connected digital future.</p>
-        <p class="about-signoff">Emarni — A New Era of Communication.<br>Developed by Raflido Studios.</p>
-      </section>
+      <button class="about-teaser card-glass" type="button" data-go="about"><span class="ab-ic">${icon("info")}</span><span class="at-txt"><b>About Emarni</b><small>Our mission, our vision, and the team behind it</small></span><span class="at-go">${icon("chevright")}</span></button>
     </div>`;
 
   $("#pfColors").innerHTML = COLORS.map(c => `<button type="button" data-c="${c}" style="background:${c}" aria-label="Accent ${c}"></button>`).join("");
@@ -149,14 +123,6 @@ function build() {
   bindDrag($("#pfCover"), "coverPos");
   bindDrag($("#pfAv"), "avatarPos");
 
-  const composerRoot = $("#meComposer");
-  $("#mePostToggle").addEventListener("click", () => {
-    const opening = composerRoot.classList.contains("hidden");
-    composerRoot.classList.toggle("hidden", !opening);
-    $("#mePostToggle").textContent = opening ? "− Close post composer" : "＋ Create post";
-    if (opening) composerRoot.querySelector("textarea")?.focus();
-  });
-  mountComposer(composerRoot);
   myPosts = new PostList($("#myPosts"), {
     source: "user",
     uid: ctx.me().uid,
@@ -258,16 +224,14 @@ async function onFilePicked(event) {
   const file = event.target.files[0];
   event.target.value = "";
   if (!file) return;
-  if (!file.type.startsWith("image/")) return toast("Choose a picture");
   const kind = uploadTarget === "cover" ? "cover" : "avatar";
-  if (file.size > LIMIT_MB[kind] * 1048576) return toast(`Picture must be under ${LIMIT_MB[kind]} MB`);
 
   const button = uploadTarget === "cover" ? $("#pfCoverBtn") : $("#pfAvBtn");
   busy(button, true, "Uploading");
   try {
     const folder = uploadTarget === "cover" ? "covers" : "avatars";
-    const small = await shrinkImage(file, uploadTarget === "cover" ? 1600 : 512);
-    const result = await fb.uploadFile(`${folder}/${ctx.me().uid}`, small);
+    const ready = await prepareUpload(file, "image", uploadTarget === "cover" ? 1600 : 512);
+    const result = await fb.uploadFile(`${folder}/${ctx.me().uid}`, ready.file);
     if (uploadTarget === "cover") {
       draft.coverURL = result.url;
       draft.coverPos = { x: 0, y: 0, z: 1 };

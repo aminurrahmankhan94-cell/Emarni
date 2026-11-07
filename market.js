@@ -1,6 +1,7 @@
 // Pet adoption (free adoption only) and paid ads with admin approval.
 import * as fb from "./firebase.js";
-import { $, $$, esc, toast, busy, errMsg, timeAgo, LIMIT_MB, openDialog, avatarHTML, shrinkImage } from "./ui.js";
+import { $, $$, esc, toast, busy, errMsg, timeAgo, LIMIT_MB, openDialog, avatarHTML } from "./ui.js";
+import { prepareUpload } from "./media.js";
 import { icon, petArt } from "./icons.js";
 
 // Replace these numbers with your real payment details before you go live.
@@ -122,7 +123,7 @@ async function savePet(event) {
   try {
     let photo = null;
     if (petPhotoFile) {
-      photo = await fb.uploadFile(`adoptions/${ctx.me().uid}`, await shrinkImage(petPhotoFile, 1000));
+      photo = await fb.uploadFile(`adoptions/${ctx.me().uid}`, (await prepareUpload(petPhotoFile, "image", 1000)).file);
     }
     await fb.createAdoption({
       name,
@@ -312,9 +313,7 @@ async function saveAd(event) {
     const image = $("#adImage").files[0];
     let upload = null;
     if (image) {
-      if (!image.type.startsWith("image/")) throw new Error("Ad image must be a picture");
-      if (image.size > LIMIT_MB.ad * 1048576) throw new Error(`Ad image must be under ${LIMIT_MB.ad} MB`);
-      upload = await fb.uploadFile(`ads/${ctx.me().uid}`, await shrinkImage(image, 1000));
+      upload = await fb.uploadFile(`ads/${ctx.me().uid}`, (await prepareUpload(image, "image", 1000)).file);
     }
     await fb.createAdRequest({
       title,
@@ -385,8 +384,6 @@ function bind() {
       preview.hidden = true;
       return;
     }
-    if (!file.type.startsWith("image/")) return toast("Choose a picture");
-    if (file.size > LIMIT_MB.pet * 1048576) return toast(`Photo must be under ${LIMIT_MB.pet} MB`);
     petPhotoFile = file;
     preview.src = URL.createObjectURL(file);
     preview.hidden = false;
