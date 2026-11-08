@@ -128,7 +128,7 @@ export function askText({ title, placeholder = "", required = true, okText = "Se
 }
 
 // Turns a Firebase or browser error into the specific reason, so the real cause is visible.
-export function friendlyError(err) {
+function explain(err) {
   const code = String(err?.code || "");
   const msg = String(err?.message || "");
   const text = `${code} ${msg}`;
@@ -173,4 +173,11 @@ export async function shrinkImage(file, maxSide = 1280, quality = 0.86) {
   });
   const base = String(file.name || "picture").replace(/\.[^.]+$/, "");
   return new File([blob], `${base}.jpg`, { type: "image/jpeg" });
+}
+
+// The explanation, with the Firebase error code added so it can be looked up.
+export function friendlyError(err) {
+  const text = explain(err);
+  const code = err?.code ? String(err.code) : "";
+  return code && !text.includes(code) ? `${text} (${code})` : text;
 }

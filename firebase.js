@@ -930,3 +930,21 @@ export async function runHealthCheck() {
   }, "Photos can be uploaded and removed.");
   return rows;
 }
+
+// ---------- v7: media checks used by Settings ----------
+const MEDIA_TESTS = {
+  image: { folder: "avatars", type: "image/png", name: "test-photo.png", bytes: [137, 80, 78, 71, 13, 10, 26, 10] },
+  video: { folder: "media", type: "video/mp4", name: "test-video.mp4", bytes: [0, 0, 0, 24, 102, 116, 121, 112, 109, 112, 52, 50] },
+  audio: { folder: "media", type: "audio/mp4", name: "test-voice.m4a", bytes: [0, 0, 0, 24, 102, 116, 121, 112, 77, 52, 65, 32] }
+};
+
+// Uploads a tiny test file of the given kind, then removes it. Throws the Firebase error if the upload fails.
+export async function testMediaUpload(kind) {
+  const user = requireUser();
+  const spec = MEDIA_TESTS[kind];
+  if (!spec) throw new Error("Unknown media test");
+  const file = new File([new Uint8Array(spec.bytes)], spec.name, { type: spec.type });
+  const sent = await uploadFile(`${spec.folder}/${user.uid}`, file);
+  await deleteFile(sent.path);
+  return true;
+}

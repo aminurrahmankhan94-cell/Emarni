@@ -11,6 +11,8 @@ import { initChat, openDm, openGroup, openNewGroup, refreshChatHead } from "./ch
 import { initPeople, openUser, refreshPeople } from "./people.js";
 import { initMonitor, onMonitorShow } from "./monitor.js";
 import { initPostbox } from "./postbox.js";
+import { initPrefs } from "./prefs.js";
+import { initSettings, onSettingsShow } from "./settings.js";
 import { initNotify, syncRooms, unreadFor, totalUnread, enableNotifications, permissionState } from "./notify.js";
 
 const S = {
@@ -75,6 +77,7 @@ function go(view) {
   if (view === "me") onProfileShow();
   if (view === "adopt" || view === "ads") onMarketShow(view);
   if (view === "monitor") onMonitorShow();
+  if (view === "settings") onSettingsShow();
 }
 
 // ---------- Sign in and register ----------
@@ -191,6 +194,7 @@ async function enter(user) {
   initPeople(ctx);
   initMonitor(ctx);
   initPostbox(ctx);
+  initSettings(ctx);
   initNotify(ctx, refreshBadges);
   go("chats");
   renderMe();
@@ -393,6 +397,7 @@ function wire() {
     location.href = "admin.html";
   });
   $("#monitorBtn").addEventListener("click", () => go("monitor"));
+  $("#settingsBtn").addEventListener("click", () => go("settings"));
 
   $("#notifyBtn").addEventListener("click", async () => {
     if (permissionState() === "granted") return toast("Notifications are already on");
@@ -439,6 +444,7 @@ function wire() {
 
 // ---------- Boot ----------
 function boot() {
+  initPrefs();
   buildBrand();
   startSplash();
   hydrate();

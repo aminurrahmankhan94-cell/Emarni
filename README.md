@@ -1,4 +1,4 @@
-# Emarni Chat (v6)
+# Emarni Chat (v7)
 
 Static web app (no build step). Put these files in your GitHub repo root and enable GitHub Pages, or serve the folder with any static server.
 
@@ -71,3 +71,17 @@ Static web app (no build step). Put these files in your GitHub repo root and ena
 3. The database rules did not change. Only publish `database.rules.json` if you have not published it before.
 4. `sw.js` must stay in the repository root. It shows notifications on phones and opens the app when a notification is tapped.
 5. Open the app, press the bell button in the Chats panel, and allow notifications.
+
+
+## What's new in v7
+
+- **Kite logo**: the mark is the red and black kite from the brand artwork. Its tails wave and its string sways. It appears on the loader (where the kite flies), the sidebar, sign-in and the About page.
+- **Phone and desktop layouts**: the app picks the layout from the window size. On phones it uses bottom tabs and one panel at a time. On desktops it uses the sidebar and two panels. Settings > Screen layout lets you force either one.
+- **Settings page**: profile (name and status), screen layout, red fog, reduced motion, compact spacing, larger text, notifications (sound, in-app cards, phone and desktop notifications, message text), media checks, account (password reset by email, sign out), and reset to default.
+- **Media checks**: Settings > Photos, videos and voice notes runs a small test upload for each kind. A failed check shows the exact reason and the Firebase error code.
+
+## Setup for v7
+
+- Storage rules: unchanged from v6. If you already published v6's `storage.rules`, nothing more is needed.
+- Database rules: unchanged.
+- Open Settings > Photos, videos and voice notes and run **Full setup check**. Any line marked Fix shows the reason, which tells you what to publish or enable.

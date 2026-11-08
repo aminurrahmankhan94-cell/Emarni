@@ -4,6 +4,7 @@ import * as fb from "./firebase.js";
 import { $, esc, toast } from "./ui.js";
 import { icon } from "./icons.js";
 import { ping } from "./ringtone.js";
+import { getPref } from "./prefs.js";
 
 let ctx = null;
 let onChange = () => {};
@@ -84,15 +85,16 @@ function handle(room, id, msg, me) {
   const sender = msg.senderName || "Emarni";
   const title = room.kind === "group" ? room.title : sender;
   const body = room.kind === "group" ? `${sender}: ${preview(msg)}` : preview(msg);
-  if (Date.now() - lastPing > 800) {
+  if (getPref("sound") && Date.now() - lastPing > 800) {
     ping();
     lastPing = Date.now();
   }
-  card(title, body, "chat", room.open);
-  osNotify(title, body, room.key);
+  if (getPref("cards")) card(title, body, "chat", room.open);
+  if (getPref("osNotify")) osNotify(title, body, room.key);
 }
 
 function preview(m) {
+  if (!getPref("preview")) return "New message";
   if (m.type === "image") return "Photo";
   if (m.type === "video") return "Video";
   if (m.type === "audio") return "Voice message";
@@ -104,15 +106,15 @@ function preview(m) {
 export function notifyIncoming(invite) {
   const kind = invite.type === "video" ? "video call" : "audio call";
   const who = invite.fromName || "Someone";
-  card(`${who} is calling`, `Incoming ${kind}`, "phone", null);
-  osNotify(`Incoming ${kind}`, `${who} is calling you on Emarni`, `call-${invite.from}`);
+  if (getPref("cards")) card(`${who} is calling`, `Incoming ${kind}`, "phone", null);
+  if (getPref("osNotify")) osNotify(`Incoming ${kind}`, `${who} is calling you on Emarni`, `call-${invite.from}`);
 }
 
 export function notifyMissed(invite) {
   const kind = invite.type === "video" ? "video" : "audio";
   const who = invite.fromName || "someone";
-  card(`Missed ${kind} call`, `From ${who}`, "phone", null);
-  osNotify(`Missed ${kind} call`, `From ${who}`, `missed-${invite.from}`);
+  if (getPref("cards")) card(`Missed ${kind} call`, `From ${who}`, "phone", null);
+  if (getPref("osNotify")) osNotify(`Missed ${kind} call`, `From ${who}`, `missed-${invite.from}`);
 }
 
 export function setActiveRoom(key) {
