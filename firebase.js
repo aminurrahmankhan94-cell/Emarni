@@ -723,35 +723,10 @@ export async function decideAd(req, approve) {
   await update(ref(db), updates);
 }
 
-// ---------- Media upload ----------
-// Photos are stored inline as Base64 data URLs in the Realtime Database records
-// that already reference them (profile, posts, chats, pets and ads).
-// Video/audio/other files continue to use Firebase Storage.
-export async function uploadFile(folder, file, onProgress) {
-  const user = requireUser("Sign in before uploading.");
-  if (file?.type?.startsWith("image/")) {
-    onProgress?.(0);
-    const dataUrl = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || ""));
-      reader.onerror = () => reject(reader.error || new Error("Could not read the photo."));
-      reader.onabort = () => reject(new Error("Photo reading was cancelled."));
-      reader.readAsDataURL(file);
-    });
-    // RTDB has a 10 MB limit for an individual string value. Keep a margin.
-    if (!dataUrl.startsWith("data:image/") || dataUrl.length > 9_000_000) {
-      throw new Error("Photo is too large for Realtime Database. Please choose a smaller photo.");
-    }
-    onProgress?.(1);
-    const safe = String(file.name || "photo").replace(/[^\\w.-]+/g, "_").slice(-80);
-    return {
-      url: dataUrl,
-      path: `rtdb-inline:${user.uid}/${Date.now()}_${safe}`,
-      database: true
-    };
-  }
-
-  const safe = String(file.name || "file").replace(/[^\\w.-]+/g, "_").slice(-80);
+// ---------- Storage ----------
+export function uploadFile(folder, file, onProgress) {
+  requireUser("Sign in before uploading.");
+  const safe = String(file.name || "file").replace(/[^\w.-]+/g, "_").slice(-80);
   const path = `${folder}/${Date.now()}_${safe}`;
   return new Promise((resolve, reject) => {
     const task = uploadBytesResumable(storageRef(storage, path), file, {
@@ -763,7 +738,7 @@ export async function uploadFile(folder, file, onProgress) {
       reject,
       async () => {
         try {
-          resolve({ url: await getDownloadURL(task.snapshot.ref), path, database: false });
+          resolve({ url: await getDownloadURL(task.snapshot.ref), path });
         } catch (err) {
           reject(err);
         }
@@ -773,7 +748,7 @@ export async function uploadFile(folder, file, onProgress) {
 }
 
 export async function deleteFile(path) {
-  if (!path || String(path).startsWith("rtdb-inline:")) return;
+  if (!path) return;
   await deleteObject(storageRef(storage, path)).catch(() => {});
 }
 

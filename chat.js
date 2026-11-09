@@ -6,6 +6,7 @@ import { icon } from "./icons.js";
 import { startCall } from "./call.js";
 import { kindOf, checkSize, prepareUpload } from "./media.js";
 import { setActiveRoom, markRead } from "./notify.js";
+import { playSound } from "./sounds.js";
 
 const LIMIT = { image: 10, video: 50, audio: 20, file: 25 };
 const REACTIONS = ["heart", "check", "sparkle"];
@@ -331,6 +332,7 @@ async function sendText(event) {
   setReply(null);
   try {
     await fb.sendChatMessage(chat, { text, replyTo }, ctx.me());
+    playSound("send");
   } catch (err) {
     input.value = text;
     if (replyTo) setReply(replyTo);

@@ -9,7 +9,11 @@ const DEFAULTS = {
   sound: true,
   cards: true,
   osNotify: true,
-  preview: true
+  preview: true,
+  envTheme: true,
+  soundMaster: true,
+  soundUi: true,
+  soundCalls: true
 };
 
 let prefs = { ...DEFAULTS };

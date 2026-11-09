@@ -3,7 +3,7 @@
 import * as fb from "./firebase.js";
 import { $, esc, toast } from "./ui.js";
 import { icon } from "./icons.js";
-import { ping } from "./ringtone.js";
+import { playSound } from "./sounds.js";
 import { getPref } from "./prefs.js";
 
 let ctx = null;
@@ -86,7 +86,7 @@ function handle(room, id, msg, me) {
   const title = room.kind === "group" ? room.title : sender;
   const body = room.kind === "group" ? `${sender}: ${preview(msg)}` : preview(msg);
   if (getPref("sound") && Date.now() - lastPing > 800) {
-    ping();
+    playSound("receive");
     lastPing = Date.now();
   }
   if (getPref("cards")) card(title, body, "chat", room.open);

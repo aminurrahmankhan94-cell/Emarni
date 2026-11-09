@@ -13,6 +13,8 @@ import { initMonitor, onMonitorShow } from "./monitor.js";
 import { initPostbox } from "./postbox.js";
 import { initPrefs } from "./prefs.js";
 import { initSettings, onSettingsShow } from "./settings.js";
+import { initSounds, playSound } from "./sounds.js";
+import { initEnvironment } from "./environment.js";
 import { initNotify, syncRooms, unreadFor, totalUnread, enableNotifications, permissionState } from "./notify.js";
 
 const S = {
@@ -118,6 +120,7 @@ async function submitAuth(event) {
     }
   } catch (err) {
     errorBox.textContent = err.code === "auth/invalid-credential" ? "Wrong login or password." : errMsg(err);
+    playSound("loginFail");
   } finally {
     busy(btn, false);
   }
@@ -410,6 +413,7 @@ function wire() {
     if (!btn) return;
     try {
       await fb.respondFriendRequest(btn.dataset.uid, btn.dataset.req === "accept");
+      playSound(btn.dataset.req === "accept" ? "accepted" : "click");
       toast(btn.dataset.req === "accept" ? "Friend added" : "Request declined");
     } catch (err) {
       toast(errMsg(err));
@@ -445,6 +449,8 @@ function wire() {
 // ---------- Boot ----------
 function boot() {
   initPrefs();
+  initSounds();
+  initEnvironment();
   buildBrand();
   startSplash();
   hydrate();
@@ -461,6 +467,7 @@ function boot() {
     S.booted = user.uid;
     try {
       await enter(user);
+      playSound("loginOk");
     } catch (err) {
       toast(errMsg(err));
       S.booted = null;

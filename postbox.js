@@ -3,6 +3,7 @@ import * as fb from "./firebase.js";
 import { $, toast, errMsg, avatarHTML, busy, openDialog } from "./ui.js";
 import { icon } from "./icons.js";
 import { kindOf, checkSize, prepareUpload } from "./media.js";
+import { playSound } from "./sounds.js";
 
 let ctx = null;
 let wired = false;
@@ -165,6 +166,7 @@ async function submit(event) {
       mediaURL: media?.url,
       mediaPath: media?.path
     });
+    playSound("posted");
     toast("Post shared");
     clearPending();
     $("#dlgPost").close();

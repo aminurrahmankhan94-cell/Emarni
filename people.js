@@ -6,6 +6,7 @@ import { icon } from "./icons.js";
 import { PostList } from "./feed.js";
 import { openDm } from "./chat.js";
 import { startCall } from "./call.js";
+import { playSound } from "./sounds.js";
 
 let ctx = null;
 let viewing = null;
@@ -87,6 +88,7 @@ async function act(action, uid) {
       await openDm(uid);
     } else if (action === "add") {
       await fb.sendFriendRequest(uid, ctx.me());
+      playSound("requestSent");
       toast(`Friend request sent to ${name}`);
     } else if (action === "cancel") {
       await fb.cancelFriendRequest(uid);

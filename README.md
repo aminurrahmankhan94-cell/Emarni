@@ -1,4 +1,4 @@
-# Emarni Chat (v7)
+# Emarni Chat (v8)
 
 Static web app (no build step). Put these files in your GitHub repo root and enable GitHub Pages, or serve the folder with any static server.
 
@@ -85,3 +85,16 @@ Static web app (no build step). Put these files in your GitHub repo root and ena
 - Storage rules: unchanged from v6. If you already published v6's `storage.rules`, nothing more is needed.
 - Database rules: unchanged.
 - Open Settings > Photos, videos and voice notes and run **Full setup check**. Any line marked Fix shows the reason, which tells you what to publish or enable.
+
+
+## What's new in v8
+
+- **Top bar**: live local time and date (browser time zone), current weather, humidity, wind, and the city. Weather updates every 15 minutes and is cached.
+- **Location**: shared only when you tap **Use my location** and allow it. Otherwise choose a city from the location button at the top.
+- **Atmosphere**: the page's soft glow and tint shift with the time of day and the weather (morning, afternoon, evening, night; sun, cloud, rain, storm, snow, fog). Colours stay red, black and white. Turn it off in Settings > Atmosphere, location and sound.
+- **Sounds**: short, soft tones made in the browser (no audio files). Messages, likes, posts, friend requests, calls, dialogs and clicks each have a sound. Settings has a master switch and separate switches for messages, interface and calls, plus a test button. Sound starts after your first tap, because browsers require that.
+
+## Setup for v8
+
+- No new database or storage rules. Nothing to publish.
+- Weather and place names use free services that need no key: Open-Meteo (weather) and BigDataCloud (city name). They need an internet connection.

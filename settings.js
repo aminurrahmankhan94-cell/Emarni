@@ -4,6 +4,8 @@ import { $, esc, toast, errMsg, busy, avatarHTML, openDialog } from "./ui.js";
 import { icon } from "./icons.js";
 import { getPref, setPref, resetPrefs, onPrefs, currentDevice } from "./prefs.js";
 import { enableNotifications, permissionState } from "./notify.js";
+import { requestLocation } from "./environment.js";
+import { playSound } from "./sounds.js";
 
 let ctx = null;
 let built = false;
@@ -77,6 +79,19 @@ function build() {
         ${toggle("cards", "In-app cards", "A card at the top right when something arrives")}
         ${toggle("osNotify", "Phone and desktop notifications", "Shown when Emarni is in the background")}
         ${toggle("preview", "Show message text", "Off hides the text and shows New message")}
+      </section>
+
+      <section class="set-card card-glass">
+        <h3>${icon("sparkle")}Atmosphere, location and sound</h3>
+        ${toggle("envTheme", "Time and weather atmosphere", "Subtle shifts with the time of day and the weather. Colours stay red, black and white.")}
+        <div class="set-item">
+          <div class="set-text"><b>Location for weather</b><small>Shared only when you tap the button. Otherwise choose a city from the location button at the top.</small></div>
+          <button class="btn sm ghost" type="button" data-act="envLocate">Use my location</button>
+        </div>
+        ${toggle("soundMaster", "All sounds", "Turns every sound off at once")}
+        ${toggle("soundUi", "Interface sounds", "Clicks, navigation, dialogs, likes and confirmations")}
+        ${toggle("soundCalls", "Call sounds", "Call connected and call ended")}
+        <div class="set-actions"><button class="btn sm ghost" type="button" data-act="testSound">Test a sound</button></div>
       </section>
 
       <section class="set-card card-glass">
@@ -169,6 +184,8 @@ async function runAction(name, btn) {
       navigator.clipboard?.writeText(ctx.me().emarniId);
       return toast("Emarni ID copied");
     }
+    if (name === "envLocate") return requestLocation();
+    if (name === "testSound") return playSound("accepted", { force: true });
     if (name === "notify") {
       await enableNotifications();
       return paint();

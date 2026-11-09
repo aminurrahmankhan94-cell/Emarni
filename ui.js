@@ -1,4 +1,5 @@
 // Shared UI helpers used by every module.
+import { playSound } from "./sounds.js";
 export const $ = (selector, root = document) => root.querySelector(selector);
 export const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
@@ -15,6 +16,9 @@ export const LIMIT_MB = { image: 10, video: 50, audio: 20, avatar: 5, cover: 8, 
 
 let toastTimer = 0;
 export function toast(message, ms = 2600) {
+  if (/fail|could not|cannot|denied|not allowed|wrong|error|too large|must be|try again|not supported/i.test(String(message))) {
+    playSound("error");
+  }
   const el = $("#toast");
   el.textContent = message;
   el.classList.add("show");
@@ -87,14 +91,20 @@ export function pop(el) {
 
 export function openDialog(selector) {
   const dialog = $(selector);
-  if (dialog && !dialog.open) dialog.showModal();
+  if (dialog && !dialog.open) {
+    dialog.showModal();
+    playSound("open");
+  }
   return dialog;
 }
 
 // Wires every [data-close] button to close its dialog.
 export function wireDialogs() {
   $$("[data-close]").forEach(btn => {
-    btn.addEventListener("click", () => btn.closest("dialog")?.close());
+    btn.addEventListener("click", () => {
+      btn.closest("dialog")?.close();
+      playSound("close");
+    });
   });
 }
 
@@ -133,7 +143,7 @@ function explain(err) {
   const msg = String(err?.message || "");
   const text = `${code} ${msg}`;
   if (/storage\/unauthorized/i.test(text)) {
-    return "Media upload permission denied. Realtime Database rules check korun; video/audio upload-er jonno Storage rules-o proyojon.";
+    return "Photos cannot be saved yet. Firebase Storage > Rules e storage.rules publish korun.";
   }
   if (/storage\/(bucket-not-found|no-default-bucket|project-not-found)/i.test(text)) {
     return "Firebase Storage chalu nei. Firebase console > Storage > Get started korun.";

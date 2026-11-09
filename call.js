@@ -5,6 +5,7 @@ import { $, toast, avatarHTML, errMsg } from "./ui.js";
 import { icon } from "./icons.js";
 import { initBoardUi, openBoard, closeBoard, toggleBoardPanel } from "./board.js";
 import { notifyIncoming, notifyMissed } from "./notify.js";
+import { playSound } from "./sounds.js";
 import { initRingtone, startRing, stopRing, startRingback, stopRingback, unlockSound, soundReady, onSoundChange } from "./ringtone.js";
 
 // For calls across strict networks, add a TURN server here:
@@ -396,6 +397,7 @@ async function hangUp() {
   const me = ctx.me().uid;
   stopRingback();
   clearTimeout(s.noAnswer);
+  playSound("callEnd");
   s.unsubs.forEach(off => off());
   s.peers.forEach(peer => peer.pc.close());
   s.local.getTracks().forEach(track => track.stop());
@@ -463,6 +465,7 @@ function markConnected() {
   stopRingback();
   clearTimeout(session?.noAnswer);
   setCallStatus("Connected");
+  playSound("callConnected");
 }
 
 function noAnswer() {

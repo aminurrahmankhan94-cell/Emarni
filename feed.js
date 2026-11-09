@@ -2,6 +2,7 @@
 import * as fb from "./firebase.js";
 import { $, esc, toast, avatarHTML, timeAgo, busy, errMsg, askText, pop } from "./ui.js";
 import { kindOf, checkSize, prepareUpload } from "./media.js";
+import { playSound } from "./sounds.js";
 import { icon } from "./icons.js";
 
 let ctx = null;
@@ -240,7 +241,10 @@ export class PostList {
 
   async toggleLike(card) {
     const on = !card.likes[ctx.me().uid];
-    if (on) pop(card.el.querySelector(".heart"));
+    if (on) {
+      pop(card.el.querySelector(".heart"));
+      playSound("like");
+    }
     try {
       await fb.setLike(card.post.id, on);
     } catch (err) {

@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=13">
+  <link rel="stylesheet" href="style.css?v=14">
 </head>
 <body>
   <div class="fog" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -52,6 +52,27 @@
 
   <!-- Signed-in app -->
   <div class="shell hidden" id="appView">
+  <!-- Top bar: live time, date, weather and location -->
+  <div class="envbar" id="envBar" aria-live="off">
+    <div class="env-time"><b id="envTime">--:--</b><small id="envDate"></small></div>
+    <div class="env-wx">
+      <span class="env-ic" id="envIcon" aria-hidden="true"></span>
+      <b id="envTemp">--°C</b>
+      <span class="env-cond" id="envCond"></span>
+    </div>
+    <div class="env-meta">
+      <span class="env-city" id="envCity"></span>
+      <span class="env-stat" id="envHum"></span>
+      <span class="env-stat" id="envWind"></span>
+    </div>
+    <button class="icon-btn sm env-btn" id="envBtn" type="button" aria-label="Location and weather" title="Location and weather"><i data-icon="pin"></i></button>
+    <div class="env-pop hidden" id="envPop" role="dialog" aria-label="Location">
+      <p class="hint">Weather uses your location only after you allow it. You can also choose a city.</p>
+      <button class="btn sm" id="envUseLoc" type="button"><i data-icon="pin"></i>Use my location</button>
+      <select id="envCitySel" aria-label="Choose a city"></select>
+    </div>
+  </div>
+
     <aside class="rail">
       <div class="rail-mark" data-brand></div>
       <nav class="navs">
@@ -559,6 +580,6 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script type="module" src="app.js?v=13"></script>
+  <script type="module" src="app.js?v=14"></script>
 </body>
 </html>
