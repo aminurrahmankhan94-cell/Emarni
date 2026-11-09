@@ -1,0 +1,267 @@
+{
+  "rules": {
+    "admins": {
+      ".read": "auth != null && (auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true)",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid"
+      }
+    },
+    "banned": {
+      ".read": "auth != null && (auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true)",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && (auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true)"
+      }
+    },
+    "users": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || (auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true))",
+        ".write": "auth != null && auth.uid === $uid",
+        "profile": {
+          ".validate": "newData.hasChildren(['uid', 'emarniId', 'displayName']) && newData.child('displayName').val().length >= 2 && newData.child('displayName').val().length <= 40"
+        }
+      }
+    },
+    "userAccounts": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || (auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true))",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "userDirectory": {
+      ".read": "auth != null",
+      "$emarniId": {
+        ".write": "auth != null && (data.child('uid').val() === auth.uid || (!data.exists() && newData.child('uid').val() === auth.uid))",
+        ".validate": "!newData.exists() || (newData.hasChildren(['uid', 'emarniId', 'displayName']) && newData.child('emarniId').val() === $emarniId && newData.child('uid').val() === auth.uid && newData.child('displayName').val().length >= 2 && newData.child('displayName').val().length <= 40)"
+      }
+    },
+    "friendships": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || (auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true))",
+        "$other": {
+          ".write": "auth != null && (auth.uid === $uid || auth.uid === $other) && (root.child('friendRequests').child(auth.uid).child($other).child('status').val() === 'accepted' || root.child('friendRequests').child($other).child(auth.uid).child('status').val() === 'accepted')"
+        }
+      }
+    },
+    "friendRequests": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || (auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true))",
+        "$from": {
+          ".write": "auth != null && (auth.uid === $uid || (auth.uid === $from && (!data.exists() || data.child('fromUid').val() === auth.uid) && (!newData.exists() || newData.child('fromUid').val() === auth.uid)))",
+          ".validate": "!newData.exists() || (newData.child('fromUid').val() === $from && newData.child('status').isString())"
+        }
+      }
+    },
+    "privateRooms": {
+      "$roomId": {
+        ".read": "auth != null && (root.child('privateRooms').child($roomId).child('members').child(auth.uid).exists() || (auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true))",
+        "members": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid && root.child('friendships').child(auth.uid).child(($roomId.replace(auth.uid + '__', '')).replace('__' + auth.uid, '')).child('status').val() === 'accepted'",
+            ".validate": "newData.val() === true"
+          }
+        },
+        "messages": {
+          ".indexOn": "createdAt",
+          "$mid": {
+            ".write": "auth != null && root.child('privateRooms').child($roomId).child('members').child(auth.uid).exists() && ((!data.exists() && newData.child('uid').val() === auth.uid) || (data.child('uid').val() === auth.uid && !newData.exists()))",
+            ".validate": "!newData.exists() || (newData.child('uid').val() === auth.uid && newData.child('createdAt').isNumber() && newData.child('type').isString() && ((newData.child('type').val() === 'text' && newData.child('text').isString() && newData.child('text').val().length >= 1 && newData.child('text').val().length <= 1000) || (newData.child('type').val() !== 'text' && newData.child('fileURL').isString())))"
+          }
+        },
+        "reactions": {
+          "$mid": {
+            "$uid": {
+              ".write": "auth != null && auth.uid === $uid && root.child('privateRooms').child($roomId).child('members').child(auth.uid).exists() && (!newData.exists() || (newData.val() === 'heart' || newData.val() === 'check' || newData.val() === 'sparkle'))",
+              ".validate": "!newData.exists() || (newData.val() === 'heart' || newData.val() === 'check' || newData.val() === 'sparkle')"
+            }
+          }
+        }
+      }
+    },
+    "groups": {
+      "$gid": {
+        ".read": "auth != null && (data.child('members').child(auth.uid).exists() || (auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true))",
+        ".write": "auth != null && ((!data.exists() && newData.child('createdBy').val() === auth.uid && newData.child('members').child(auth.uid).val() === true) || (data.child('members').child(auth.uid).exists() && newData.child('createdBy').val() === data.child('createdBy').val()))",
+        ".validate": "!newData.exists() || (newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 40 && newData.child('createdBy').isString())"
+      }
+    },
+    "groupMessages": {
+      "$gid": {
+        ".read": "auth != null && (root.child('groups').child($gid).child('members').child(auth.uid).exists() || (auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true))",
+        ".indexOn": "createdAt",
+        "$mid": {
+          ".write": "auth != null && root.child('groups').child($gid).child('members').child(auth.uid).exists() && ((!data.exists() && newData.child('uid').val() === auth.uid) || (data.child('uid').val() === auth.uid && !newData.exists()))",
+          ".validate": "!newData.exists() || (newData.child('uid').val() === auth.uid && newData.child('createdAt').isNumber() && newData.child('type').isString() && ((newData.child('type').val() === 'text' && newData.child('text').isString() && newData.child('text').val().length >= 1 && newData.child('text').val().length <= 1000) || (newData.child('type').val() !== 'text' && newData.child('fileURL').isString())))"
+        }
+      }
+    },
+    "userGroups": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || (auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true))",
+        "$gid": {
+          ".write": "auth != null && (auth.uid === $uid || (root.child('groups').child($gid).child('members').child(auth.uid).exists() && root.child('groups').child($gid).child('members').child($uid).exists()))"
+        }
+      }
+    },
+    "userCalls": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$rid": {
+          ".write": "auth != null && (auth.uid === $uid || (root.child('callRooms').child($rid).child('participants').child(auth.uid).exists() && (!newData.exists() || newData.child('from').val() === auth.uid)))"
+        }
+      }
+    },
+    "callRooms": {
+      "$rid": {
+        ".read": "auth != null && (data.child('participants').child(auth.uid).exists() || root.child('userCalls').child(auth.uid).child($rid).exists() || (auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true))",
+        ".write": "auth != null && ((!data.exists() && newData.child('createdBy').val() === auth.uid) || data.child('createdBy').val() === auth.uid || (data.child('participants').child(auth.uid).exists() && !newData.exists()))",
+        "participants": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid",
+            ".validate": "!newData.exists() || newData.child('name').isString()"
+          }
+        },
+        "signals": {
+          "$toUid": {
+            "$pid": {
+              ".write": "auth != null && (auth.uid === $toUid || (root.child('callRooms').child($rid).child('participants').child(auth.uid).exists() && newData.child('from').val() === auth.uid))",
+              ".validate": "!newData.exists() || (newData.child('from').isString() && newData.child('kind').isString())"
+            }
+          }
+        },
+        "live": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid"
+          }
+        },
+        "board": {
+          "$sid": {
+            ".write": "auth != null && (root.child('callRooms').child($rid).child('createdBy').val() === auth.uid || (root.child('callRooms').child($rid).child('boardLocked').val() !== true && root.child('callRooms').child($rid).child('participants').child(auth.uid).exists() && (newData.child('uid').val() === auth.uid || data.child('uid').val() === auth.uid)))",
+            ".validate": "!newData.exists() || (newData.child('uid').isString() && newData.child('p').hasChildren())"
+          }
+        },
+        "boardLocked": {
+          ".write": "auth != null && root.child('callRooms').child($rid).child('createdBy').val() === auth.uid"
+        }
+      }
+    },
+    "noticeAcks": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "reports": {
+      ".read": "auth != null && (auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true)",
+      "$rid": {
+        ".write": "auth != null && ((auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true) || (!data.exists() && newData.child('reporterUid').val() === auth.uid && newData.child('type').isString()))"
+      }
+    },
+    "moderationArchive": {
+      ".read": "auth != null && (auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true)",
+      ".indexOn": "roomId",
+      "$aid": {
+        ".write": "auth != null && (((auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true) && !newData.exists()) || (!data.exists() && newData.child('uid').val() === auth.uid && newData.child('deletedBy').val() === auth.uid && ((newData.child('scope').val() === 'group' && root.child('groupMessages').child(newData.child('roomId').val()).child(newData.child('messageId').val()).child('uid').val() === auth.uid) || (newData.child('scope').val() !== 'group' && root.child('privateRooms').child(newData.child('roomId').val()).child('messages').child(newData.child('messageId').val()).child('uid').val() === auth.uid))))"
+      }
+    },
+    "adminAudit": {
+      ".read": "auth != null && (auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true)",
+      "$id": {
+        ".write": "auth != null && (auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true) && newData.child('adminUid').val() === auth.uid"
+      }
+    },
+    "posts": {
+      ".read": "auth != null",
+      ".indexOn": [
+        "createdAt",
+        "uid"
+      ],
+      "$pid": {
+        ".write": "auth != null && !root.child('banned').child(auth.uid).exists() && ((!data.exists() && newData.child('uid').val() === auth.uid) || (data.child('uid').val() === auth.uid && (!newData.exists() || newData.child('uid').val() === auth.uid)) || ((auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true) && !newData.exists()))",
+        ".validate": "!newData.exists() || (newData.child('uid').val() === auth.uid && newData.child('createdAt').isNumber() && newData.child('mediaType').isString() && (!newData.child('text').exists() || (newData.child('text').isString() && newData.child('text').val().length <= 2000)))"
+      }
+    },
+    "postLikes": {
+      ".read": "auth != null",
+      "$pid": {
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid && root.child('posts').child($pid).exists()",
+          ".validate": "!newData.exists() || newData.val() === true"
+        }
+      }
+    },
+    "postComments": {
+      "$pid": {
+        ".read": "auth != null",
+        "$cid": {
+          ".write": "auth != null && !root.child('banned').child(auth.uid).exists() && root.child('posts').child($pid).exists() && ((!data.exists() && newData.child('uid').val() === auth.uid) || (data.child('uid').val() === auth.uid && !newData.exists()) || ((auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true) && !newData.exists()))",
+          ".validate": "!newData.exists() || (newData.child('uid').isString() && newData.child('text').isString() && newData.child('text').val().length >= 1 && newData.child('text').val().length <= 500 && newData.child('createdAt').isNumber())",
+          "replies": {
+            "$rid": {
+              ".write": "auth != null && !root.child('banned').child(auth.uid).exists() && root.child('posts').child($pid).exists() && ((!data.exists() && newData.child('uid').val() === auth.uid) || (data.child('uid').val() === auth.uid && !newData.exists()) || ((auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true) && !newData.exists()))",
+              ".validate": "!newData.exists() || (newData.child('uid').isString() && newData.child('text').isString() && newData.child('text').val().length >= 1 && newData.child('text').val().length <= 500 && newData.child('createdAt').isNumber())"
+            }
+          }
+        }
+      }
+    },
+    "adoptions": {
+      ".read": "auth != null",
+      ".indexOn": "createdAt",
+      "$pid": {
+        ".write": "auth != null && !root.child('banned').child(auth.uid).exists() && ((!data.exists() && newData.child('uid').val() === auth.uid) || data.child('uid').val() === auth.uid || ((auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true) && !newData.exists()))",
+        ".validate": "!newData.exists() || (newData.child('uid').isString() && newData.child('name').isString() && newData.child('name').val().length >= 1 && newData.child('name').val().length <= 60 && newData.child('status').isString() && newData.child('createdAt').isNumber())"
+      }
+    },
+    "adoptionRequests": {
+      "$pid": {
+        ".read": "auth != null && root.child('adoptions').child($pid).child('uid').val() === auth.uid",
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && ((auth.uid === $uid && root.child('adoptions').child($pid).exists() && !root.child('banned').child(auth.uid).exists()) || root.child('adoptions').child($pid).child('uid').val() === auth.uid)",
+          ".validate": "!newData.exists() || (newData.child('uid').val() === $uid && newData.child('message').isString() && newData.child('message').val().length >= 1 && newData.child('message').val().length <= 500 && newData.child('name').isString())"
+        }
+      }
+    },
+    "adRequests": {
+      ".read": "auth != null && (auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true)",
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || (auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true))",
+        "$aid": {
+          ".write": "auth != null && ((auth.uid === $uid && (!data.exists() || data.child('status').val() === 'pending') && (!newData.exists() || (newData.child('status').val() === 'pending' && newData.child('uid').val() === auth.uid))) || (auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true))",
+          ".validate": "!newData.exists() || (newData.child('uid').val() === $uid && newData.child('title').isString() && newData.child('title').val().length >= 2 && newData.child('title').val().length <= 80 && newData.child('amount').isNumber() && newData.child('days').isNumber() && newData.child('txnId').isString() && newData.child('status').isString())"
+        }
+      }
+    },
+    "ads": {
+      ".read": "auth != null",
+      "$aid": {
+        ".write": "auth != null && (auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true)",
+        ".validate": "!newData.exists() || (newData.child('title').isString() && newData.child('uid').isString() && newData.child('expiresAt').isNumber())"
+      }
+    },
+    "sentRequests": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "groupReactions": {
+      "$gid": {
+        ".read": "auth != null && (root.child('groups').child($gid).child('members').child(auth.uid).exists() || (auth.token.email === 'abid@gmail.com' || auth.token.admin === true || root.child('admins').child(auth.uid).val() === true))",
+        "$mid": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid && root.child('groups').child($gid).child('members').child(auth.uid).exists() && (!newData.exists() || (newData.val() === 'heart' || newData.val() === 'check' || newData.val() === 'sparkle'))",
+            ".validate": "!newData.exists() || (newData.val() === 'heart' || newData.val() === 'check' || newData.val() === 'sparkle')"
+          }
+        }
+      }
+    },
+    "_health": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    }
+  }
+}

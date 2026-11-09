@@ -1,0 +1,67 @@
+rules_version = '2';
+
+// Paste into Firebase console > Storage > Rules, then Publish.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function isMedia() {
+      return request.resource.contentType.matches('image/.*')
+        || request.resource.contentType.matches('video/.*')
+        || request.resource.contentType.matches('audio/.*');
+    }
+
+    // Feed photos, videos and voice notes (max 160 MB).
+    match /media/{uid}/{fileName} {
+      allow read: if signedIn();
+      allow create, update: if isOwner(uid) && isMedia() && request.resource.size < 160 * 1024 * 1024;
+      allow delete: if isOwner(uid);
+    }
+
+    // Chat attachments: photos, videos, voice notes and files (max 160 MB). Only the sender can upload.
+    match /chatfiles/{uid}/{fileName} {
+      allow read: if signedIn();
+      allow create, update: if isOwner(uid) && request.resource.size < 160 * 1024 * 1024;
+      allow delete: if isOwner(uid);
+    }
+
+    // Profile photo (max 10 MB).
+    match /avatars/{uid}/{fileName} {
+      allow read: if signedIn();
+      allow create, update: if isOwner(uid) && isImage() && request.resource.size < 10 * 1024 * 1024;
+      allow delete: if isOwner(uid);
+    }
+
+    // Cover photo (max 12 MB).
+    match /covers/{uid}/{fileName} {
+      allow read: if signedIn();
+      allow create, update: if isOwner(uid) && isImage() && request.resource.size < 12 * 1024 * 1024;
+      allow delete: if isOwner(uid);
+    }
+
+    // Pet photos (max 10 MB).
+    match /adoptions/{uid}/{fileName} {
+      allow read: if signedIn();
+      allow create, update: if isOwner(uid) && isImage() && request.resource.size < 10 * 1024 * 1024;
+      allow delete: if isOwner(uid);
+    }
+
+    // Ad images (max 10 MB).
+    match /ads/{uid}/{fileName} {
+      allow read: if signedIn();
+      allow create, update: if isOwner(uid) && isImage() && request.resource.size < 10 * 1024 * 1024;
+      allow delete: if isOwner(uid);
+    }
+  }
+}
