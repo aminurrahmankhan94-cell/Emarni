@@ -9,6 +9,23 @@ export const esc = value =>
 export const errMsg = err => friendlyError(err);
 
 export const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+// v9 (S1) helpers — additive only.
+// Debounce: delays calling fn until wait ms have passed since the last call.
+export function debounce(fn, wait = 250) {
+  let t = 0;
+  return (...args) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...args), wait);
+  };
+}
+// Closes any open popover/dropdown when clicking outside. Returns the off handler.
+export function outsideClose(selector, onClose) {
+  const handler = event => {
+    if (!event.target.closest(selector)) onClose?.();
+  };
+  document.addEventListener("click", handler, true);
+  return () => document.removeEventListener("click", handler, true);
+}
 
 export const COLORS = ["#ef4444", "#dc2626", "#f87171", "#fecaca", "#ffffff", "#a3a3a3"];
 

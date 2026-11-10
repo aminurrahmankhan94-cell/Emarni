@@ -1,9 +1,13 @@
-// Media rules shared by posts and chats. Many phones and Windows browsers leave the file type empty
-// (phone videos, .mov, .mkv, HEIC photos). These helpers fix that, so uploads are not rejected.
-import { shrinkImage } from "./ui.js";
+// Media rules shared by posts, chats, market and profile avatars. Many phones and Windows
+// browsers leave the file type empty (phone videos, .mov, .mkv, HEIC photos). These helpers fix
+// that, so uploads are not rejected. Stable exports (other shards import these): kindOf,
+// checkSize, prepareUpload, LIMITS, KIND_LABEL. S2 (messaging) may extend but not rename.
+import { shrinkImage, friendlyError } from "./ui.js";
 
-export const LIMITS = { image: 10, video: 150, audio: 20, file: 25 }; // MB
-export const KIND_LABEL = { image: "Photo", video: "Video", audio: "Audio", file: "File" };
+export const LIMITS = { image: 10, video: 150, audio: 20, voice: 20, file: 25 }; // MB
+export const KIND_LABEL = { image: "Photo", video: "Video", audio: "Audio", voice: "Voice note", file: "File" };
+// accept attribute for a hidden <input type=file>, per kind.
+export const ACCEPT_FOR = { image: "image/*", video: "video/*", audio: "audio/*", voice: "audio/*", file: "" };
 
 const MIME = {
   jpg: "image/jpeg",
@@ -24,7 +28,8 @@ const MIME = {
   aac: "audio/aac",
   wav: "audio/wav",
   ogg: "audio/ogg",
-  opus: "audio/ogg"
+  opus: "audio/ogg",
+  webm_audio: "audio/webm"
 };
 
 const extOf = name => String(name || "").toLowerCase().split(".").pop();
@@ -46,16 +51,26 @@ function withType(file) {
 }
 
 export function checkSize(file, kind) {
-  if (file.size > LIMITS[kind] * 1048576) {
-    throw new Error(`${KIND_LABEL[kind]} must be under ${LIMITS[kind]} MB. Choose a smaller file.`);
+  const limit = LIMITS[kind] ?? LIMITS.file;
+  if (!file || file.size === 0) throw new Error(`${KIND_LABEL[kind] || "File"} is empty. Choose a different file.`);
+  if (file.size > limit * 1048576) {
+    throw new Error(`${KIND_LABEL[kind] || "File"} must be under ${limit} MB. Choose a smaller file.`);
   }
 }
 
+// Full pre-upload validation: kind, non-empty, size. Throws a user-friendly Error.
+export function validateFile(file, kind) {
+  if (!file) throw new Error("No file selected.");
+  checkSize(file, kind);
+  return true;
+}
+
 // Returns { file, kind } ready to upload. Photos are resized first; if a photo cannot be decoded,
-// the reason is explained instead of a generic failure.
+// the reason is explained instead of a generic failure. maxSide only applies to images.
 export async function prepareUpload(file, kind, maxSide = 1600) {
   let out = withType(file);
-  if (kind === "image") {
+  const resolved = kind || kindOf(out);
+  if (resolved === "image") {
     try {
       out = await shrinkImage(out, maxSide);
     } catch (err) {
@@ -67,6 +82,11 @@ export async function prepareUpload(file, kind, maxSide = 1600) {
       throw err;
     }
   }
-  checkSize(out, kind);
-  return { file: out, kind };
+  validateFile(out, resolved);
+  return { file: out, kind: resolved };
+}
+
+// Wraps an upload error into a friendly message (caller shows via toast).
+export function uploadError(err) {
+  return friendlyError(err);
 }

@@ -1,33 +1,36 @@
-// Settings: profile, screen layout and appearance, notifications, media checks, and account.
+// Settings: appearance, sound, notifications, privacy/account, media and health checks.
+// S1 owns this file. Renders into #settingsView.
 import * as fb from "./firebase.js";
 import { $, esc, toast, errMsg, busy, avatarHTML, openDialog } from "./ui.js";
 import { icon } from "./icons.js";
-import { getPref, setPref, resetPrefs, onPrefs, currentDevice } from "./prefs.js";
+import { getPref, setPref, resetPrefs, onPrefs, currentDevice, resolvedTheme } from "./prefs.js";
 import { enableNotifications, permissionState } from "./notify.js";
-import { requestLocation } from "./environment.js";
 import { playSound } from "./sounds.js";
-
 let ctx = null;
 let built = false;
-
 export function initSettings(context) {
   ctx = context;
   onPrefs(() => {
     if (built) paint();
   });
 }
-
 export function onSettingsShow() {
   if (!built) build();
   paint();
 }
-
 const toggle = (key, label, hint) => `
   <div class="set-item">
     <div class="set-text"><b>${label}</b>${hint ? `<small>${hint}</small>` : ""}</div>
-    <button type="button" class="switch" role="switch" data-pref="${key}" aria-label="${label}" aria-checked="false"><span></span></button>
+    <button type="button" class="switch" role="switch" data-pref="${key}" aria-label="${esc(label)}" aria-checked="false"><span></span></button>
   </div>`;
-
+const soundRow = (key, label, hint, testName) => `
+  <div class="set-item">
+    <div class="set-text"><b>${label}</b>${hint ? `<small>${hint}</small>` : ""}</div>
+    <div class="set-sound">
+      <button type="button" class="switch" role="switch" data-pref="${key}" aria-label="${esc(label)}" aria-checked="false"><span></span></button>
+      <button type="button" class="btn sm ghost" data-test-sound="${testName}">Test</button>
+    </div>
+  </div>`;
 function build() {
   built = true;
   $("#settingsView").innerHTML = `
@@ -39,63 +42,63 @@ function build() {
         </div>
       </header>
 
-      <section class="set-card card-glass">
-        <h3>${icon("user")}Profile</h3>
-        <div class="set-profile" id="setProfile"></div>
-        <div class="set-grid">
-          <label>Display name <input id="setName" maxlength="32" autocomplete="name"></label>
-          <label>Status <input id="setStatus" maxlength="60" placeholder="Studying, Busy, Available"></label>
-        </div>
-        <div class="set-actions">
-          <button class="btn sm" type="button" data-act="saveQuick">Save profile</button>
-          <button class="btn sm ghost" type="button" data-go="me">Photo and cover</button>
-          <button class="btn sm ghost" type="button" data-act="copyId">Copy my Emarni ID</button>
-        </div>
-      </section>
-
-      <section class="set-card card-glass">
-        <h3>${icon("device")}Screen and appearance</h3>
+      <section class="set-card card">
+        <h3><i data-icon="palette"></i>Appearance</h3>
         <div class="set-item">
-          <div class="set-text"><b>Screen layout</b><small>Showing now: <span id="setDevice"></span>. Auto follows the size of the window.</small></div>
+          <div class="set-text"><b>Theme</b><small>Dark by default. Auto follows your device.</small></div>
+          <div class="seg tri">
+            <button type="button" data-pref="theme" data-value="dark"><i data-icon="moon"></i>Dark</button>
+            <button type="button" data-pref="theme" data-value="light"><i data-icon="sun"></i>Light</button>
+            <button type="button" data-pref="theme" data-value="auto"><i data-icon="globe"></i>Auto</button>
+          </div>
+        </div>
+        ${toggle("envTheme", "Time and weather atmosphere", "Subtle background shifts with the time of day and weather. Text contrast is never reduced.")}
+        ${toggle("reduceMotion", "Reduce motion", "Turns off most animations")}
+        ${toggle("compact", "Compact spacing", "Fits more on the screen")}
+        ${toggle("largeText", "Larger text", "Makes text and buttons a little bigger")}
+        <div class="set-item">
+          <div class="set-text"><b>Screen layout</b><small>Showing now: <span id="setDevice"></span>. Auto follows the window size.</small></div>
           <div class="seg tri">
             <button type="button" data-pref="layout" data-value="auto">Auto</button>
             <button type="button" data-pref="layout" data-value="phone">Phone</button>
             <button type="button" data-pref="layout" data-value="desktop">Desktop</button>
           </div>
         </div>
-        ${toggle("fog", "Red fog background", "The soft, slowly moving red glow behind every screen")}
-        ${toggle("reduceMotion", "Reduce motion", "Turns off most animations")}
-        ${toggle("compact", "Compact spacing", "Fits more on the screen")}
-        ${toggle("largeText", "Larger text", "Makes text and buttons a little bigger")}
       </section>
 
-      <section class="set-card card-glass">
-        <h3>${icon("bell")}Notifications</h3>
+      <section class="set-card card">
+        <h3><i data-icon="volume"></i>Sound</h3>
+        ${soundRow("soundMaster", "All sounds", "Turns every sound off at once", "loginOk")}
+        ${soundRow("soundMessages", "Messages", "Sent and received message chimes", "receive")}
+        ${soundRow("soundNotify", "Notifications", "Friend requests and alerts", "requestSent")}
+        ${soundRow("soundCalls", "Calls", "Call connected and call ended", "callConnected")}
+        ${soundRow("soundUi", "Interface", "Clicks, navigation, dialogs, likes, confirmations", "open")}
+      </section>
+
+      <section class="set-card card">
+        <h3><i data-icon="bell"></i>Notifications</h3>
         <div class="set-item">
-          <div class="set-text"><b>Notifications on this device</b><small id="setNotifyState"></small></div>
+          <div class="set-text"><b>Desktop notifications</b><small id="setNotifyState"></small></div>
           <button class="btn sm" type="button" data-act="notify">Turn on</button>
         </div>
-        ${toggle("sound", "Sound for new messages", "A short chime when something arrives")}
+        ${toggle("desktopNotify", "Allow desktop notifications", "Shown when Emarni is in the background (requires permission above)")}
         ${toggle("cards", "In-app cards", "A card at the top right when something arrives")}
-        ${toggle("osNotify", "Phone and desktop notifications", "Shown when Emarni is in the background")}
-        ${toggle("preview", "Show message text", "Off hides the text and shows New message")}
+        ${toggle("messagePreview", "Show message text", "Off hides the text and shows “New message”")}
       </section>
 
-      <section class="set-card card-glass">
-        <h3>${icon("sparkle")}Atmosphere, location and sound</h3>
-        ${toggle("envTheme", "Time and weather atmosphere", "Subtle shifts with the time of day and the weather. Colours stay red, black and white.")}
-        <div class="set-item">
-          <div class="set-text"><b>Location for weather</b><small>Shared only when you tap the button. Otherwise choose a city from the location button at the top.</small></div>
-          <button class="btn sm ghost" type="button" data-act="envLocate">Use my location</button>
+      <section class="set-card card">
+        <h3><i data-icon="user"></i>Profile and account</h3>
+        <div class="set-profile" id="setProfile"></div>
+        <div class="set-actions">
+          <button class="btn sm" type="button" data-go="me"><i data-icon="pen"></i>Edit profile</button>
+          <button class="btn sm ghost" type="button" data-act="copyId"><i data-icon="copy"></i>Copy my Emarni ID</button>
+          <button class="btn sm ghost" type="button" data-act="resetPw"><i data-icon="key"></i>Change password by email</button>
+          <button class="btn sm danger" type="button" data-act="signout"><i data-icon="power"></i>Sign out</button>
         </div>
-        ${toggle("soundMaster", "All sounds", "Turns every sound off at once")}
-        ${toggle("soundUi", "Interface sounds", "Clicks, navigation, dialogs, likes and confirmations")}
-        ${toggle("soundCalls", "Call sounds", "Call connected and call ended")}
-        <div class="set-actions"><button class="btn sm ghost" type="button" data-act="testSound">Test a sound</button></div>
       </section>
 
-      <section class="set-card card-glass">
-        <h3>${icon("sparkle")}Photos, videos and voice notes</h3>
+      <section class="set-card card">
+        <h3><i data-icon="image"></i>Media and health</h3>
         <p class="hint">Use these checks to find out whether media can be sent. A failed check shows the exact reason and the Firebase code.</p>
         <div class="set-actions">
           <button class="btn sm ghost" type="button" data-act="testImage">Test photo</button>
@@ -106,19 +109,8 @@ function build() {
         <ul class="diag" id="setDiag"></ul>
       </section>
 
-      <section class="set-card card-glass">
-        <h3>${icon("key")}Account</h3>
-        <div class="set-item">
-          <div class="set-text"><b>Email</b><small id="setEmail"></small></div>
-        </div>
-        <div class="set-actions">
-          <button class="btn sm ghost" type="button" data-act="resetPw">Change password by email</button>
-          <button class="btn sm danger" type="button" data-act="signout">Sign out</button>
-        </div>
-      </section>
-
-      <section class="set-card card-glass">
-        <h3>${icon("info")}About and data</h3>
+      <section class="set-card card">
+        <h3><i data-icon="info"></i>About and data</h3>
         <div class="set-actions">
           <button class="btn sm ghost" type="button" data-go="about">About Emarni</button>
           <button class="btn sm ghost" type="button" data-act="privacy">Privacy notice</button>
@@ -126,48 +118,55 @@ function build() {
         </div>
       </section>
     </div>`;
-
   const root = $("#settingsView");
   root.addEventListener("click", event => {
     const seg = event.target.closest("[data-pref][data-value]");
     if (seg) return setPref(seg.dataset.pref, seg.dataset.value);
     const sw = event.target.closest(".switch[data-pref]");
     if (sw) return setPref(sw.dataset.pref, !getPref(sw.dataset.pref));
+    const test = event.target.closest("[data-test-sound]");
+    if (test) return playSound(test.dataset.testSound, { force: true });
     const act = event.target.closest("[data-act]");
     if (act) runAction(act.dataset.act, act);
   });
 }
-
 function paint() {
   const root = $("#settingsView");
-  root.querySelectorAll("[data-pref][data-value]").forEach(b => b.classList.toggle("on", getPref(b.dataset.pref) === b.dataset.value));
+  if (!root) return;
+  root.querySelectorAll("[data-pref][data-value]").forEach(b =>
+    b.classList.toggle("on", getPref(b.dataset.pref) === b.dataset.value)
+  );
   root.querySelectorAll(".switch[data-pref]").forEach(s => {
     const on = Boolean(getPref(s.dataset.pref));
     s.classList.toggle("on", on);
     s.setAttribute("aria-checked", String(on));
   });
-  $("#setDevice").textContent = currentDevice() === "phone" ? "Phone" : "Desktop";
+  const dev = $("#setDevice");
+  if (dev) dev.textContent = currentDevice() === "phone" ? "Phone" : "Desktop";
   const state = permissionState();
-  $("#setNotifyState").textContent =
-    state === "granted"
-      ? "On"
-      : state === "denied"
-        ? "Blocked in the browser settings"
-        : state === "unsupported"
-          ? "Not supported in this browser"
-          : "Off";
-  const user = fb.getCurrentUser();
-  $("#setEmail").textContent = user?.email || "Signed in with an Emarni ID, so there is no email on this account";
-  const me = ctx?.me();
+  const ns = $("#setNotifyState");
+  if (ns)
+    ns.textContent =
+      state === "granted"
+        ? "On — allowed"
+        : state === "denied"
+          ? "Blocked in the browser settings"
+          : state === "unsupported"
+            ? "Not supported in this browser"
+            : "Off — tap Turn on";
+  const me = ctx?.me?.();
   if (me) {
-    $("#setProfile").innerHTML = `${avatarHTML(me, "xl")}<div class="set-who"><b>${esc(me.displayName)}</b><small>Emarni ID ${esc(me.emarniId)}</small></div>`;
-    if (document.activeElement?.id !== "setName") $("#setName").value = me.displayName || "";
-    if (document.activeElement?.id !== "setStatus") $("#setStatus").value = me.status || "";
+    const sp = $("#setProfile");
+    if (sp)
+      sp.innerHTML = `${avatarHTML(me, "xl")}<div class="set-who"><b>${esc(me.displayName)}</b><small>Emarni ID ${esc(
+        me.emarniId
+      )}</small></div>`;
   }
 }
-
 function showDiag(rows) {
-  $("#setDiag").innerHTML = rows
+  const el = $("#setDiag");
+  if (!el) return;
+  el.innerHTML = rows
     .map(
       r => `<li class="diag-row ${r.ok ? "ok" : "bad"}">
         <span class="pill ${r.ok ? "green" : "red"}">${r.ok ? "OK" : "Fix"}</span>
@@ -176,16 +175,12 @@ function showDiag(rows) {
     )
     .join("");
 }
-
 async function runAction(name, btn) {
   try {
-    if (name === "saveQuick") return await saveQuick(btn);
     if (name === "copyId") {
       navigator.clipboard?.writeText(ctx.me().emarniId);
       return toast("Emarni ID copied");
     }
-    if (name === "envLocate") return requestLocation();
-    if (name === "testSound") return playSound("accepted", { force: true });
     if (name === "notify") {
       await enableNotifications();
       return paint();
@@ -211,21 +206,6 @@ async function runAction(name, btn) {
     toast(errMsg(err));
   }
 }
-
-async function saveQuick(btn) {
-  const displayName = $("#setName").value.trim();
-  const status = $("#setStatus").value.trim().slice(0, 60);
-  if (displayName.length < 2 || displayName.length > 32) return toast("Display name must be 2 to 32 characters");
-  busy(btn, true, "Saving");
-  try {
-    const next = await fb.saveProfile({ displayName, status });
-    ctx.setMe(next);
-    toast("Profile saved");
-  } finally {
-    busy(btn, false);
-  }
-}
-
 async function runTest(btn, kind) {
   busy(btn, true, "Testing");
   showDiag([{ name: `${kind} upload`, ok: true, message: "Testing..." }]);
@@ -237,8 +217,6 @@ async function runTest(btn, kind) {
     busy(btn, false);
   }
 }
-
-// Uploads a tiny test file of the given kind and removes it again.
 async function checkMedia(kind) {
   const label = { image: "Photo upload", video: "Video upload", audio: "Voice note upload" }[kind];
   try {
@@ -248,7 +226,6 @@ async function checkMedia(kind) {
     return { name: label, ok: false, message: errMsg(err) };
   }
 }
-
 async function fullCheck(btn) {
   busy(btn, true, "Checking");
   showDiag([{ name: "Full setup check", ok: true, message: "Checking the database, the feed and every kind of upload..." }]);
@@ -263,7 +240,6 @@ async function fullCheck(btn) {
     busy(btn, false);
   }
 }
-
 async function resetPassword() {
   const email = fb.getCurrentUser()?.email;
   if (!email) return toast("This account has no email. Password reset works for email accounts only.");

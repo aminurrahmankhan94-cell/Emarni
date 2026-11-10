@@ -1,43 +1,43 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark" data-device="desktop">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#050505">
   <meta name="description" content="Emarni: friends, groups, feed, pet adoption, ads, and audio or video calls with a shared whiteboard.">
-  <title>Emarni Chat</title>
+  <title>EMARNI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=14">
+  <link rel="stylesheet" href="style.css?v=9">
+  <!-- Feature CSS (created by S2/S3/S4/S5 shards; scoped under their view ids) -->
+  <link rel="stylesheet" href="chat.css?v=9">
+  <link rel="stylesheet" href="social.css?v=9">
+  <link rel="stylesheet" href="calls.css?v=9">
+  <link rel="stylesheet" href="market.css?v=9">
 </head>
 <body>
-  <div class="fog" aria-hidden="true"><i></i><i></i><i></i></div>
-
-  <!-- Loader: the spiral mark turns inside a red mist -->
+  <!-- ============ SPLASH ============ -->
   <div class="splash" id="splash" aria-live="polite">
-    <div class="mist" aria-hidden="true"><i></i><i></i><i></i></div>
-    <div class="splash-stage" aria-hidden="true">
-      <span class="halo"></span>
-      <span class="trail t1"></span>
-      <span class="trail t2"></span>
-      <div class="splash-brand" data-brand></div>
-    </div>
-    <h1 class="brand" id="brand">EMARNI</h1>
+    <div class="splash-brand" data-brand></div>
+    <h1 id="brand">EMARNI</h1>
     <p class="splash-msg" id="splashMsg">Warming up</p>
     <div class="meter"><i></i></div>
   </div>
 
-  <!-- Sign in / register -->
-  <section class="auth hidden" id="authView">
-    <div class="card">
+  <!-- ============ AUTH SCREEN ============ -->
+  <section id="authScreen" class="hidden" aria-label="Sign in">
+    <div class="auth-card">
       <div class="auth-mark" data-brand></div>
-      <div class="seg" role="tablist">
-        <button type="button" class="on" data-mode="login">Sign in</button>
-        <button type="button" data-mode="register">Create account</button>
+      <h1>EMARNI</h1>
+      <p class="auth-sub">Connecting People. Building a Better Digital Future.</p>
+      <div class="seg" role="tablist" style="width:100%;margin-bottom:16px;">
+        <button type="button" class="on" data-mode="login" style="flex:1;justify-content:center;">Sign in</button>
+        <button type="button" data-mode="register" style="flex:1;justify-content:center;">Create account</button>
+        <button type="button" data-mode="forgot" style="flex:1;justify-content:center;">Forgot</button>
       </div>
       <form id="authForm" class="fields" novalidate>
-        <h2 id="authTitle">Welcome back</h2>
+        <h2 id="authTitle" style="font-size:1.1rem;">Welcome back</h2>
         <p class="hint" id="authHint">Sign in with your email or Emarni ID.</p>
         <input id="fName" class="hidden" maxlength="32" placeholder="Your name" autocomplete="name">
         <input id="fEmail" class="hidden" type="email" placeholder="Email" autocomplete="email">
@@ -50,536 +50,594 @@
     </div>
   </section>
 
-  <!-- Signed-in app -->
-  <div class="shell hidden" id="appView">
-  <!-- Top bar: live time, date, weather and location -->
-  <div class="envbar" id="envBar" aria-live="off">
-    <div class="env-time"><b id="envTime">--:--</b><small id="envDate"></small></div>
-    <div class="env-wx">
-      <span class="env-ic" id="envIcon" aria-hidden="true"></span>
-      <b id="envTemp">--°C</b>
-      <span class="env-cond" id="envCond"></span>
-    </div>
-    <div class="env-meta">
-      <span class="env-city" id="envCity"></span>
-      <span class="env-stat" id="envHum"></span>
-      <span class="env-stat" id="envWind"></span>
-    </div>
-    <button class="icon-btn sm env-btn" id="envBtn" type="button" aria-label="Location and weather" title="Location and weather"><i data-icon="pin"></i></button>
-    <div class="env-pop hidden" id="envPop" role="dialog" aria-label="Location">
+  <!-- ============ APP SHELL ============ -->
+  <div id="appShell" class="hidden">
+    <!-- Sidebar -->
+    <aside id="sidebar">
+      <div id="sidebarBrand">
+        <div data-brand></div>
+        <span class="brand-name">EMARNI</span>
+      </div>
+      <button class="icon-btn sm" id="sidebarToggle" type="button" aria-label="Collapse sidebar" title="Collapse sidebar"><i data-icon="chevright"></i></button>
+      <nav class="navs" aria-label="Main">
+        <button class="nav on" type="button" data-nav="chats"><i data-icon="chat"></i><span>Chats</span><b class="nav-badge hidden" id="chatsBadge">0</b></button>
+        <button class="nav" type="button" data-nav="friends"><i data-icon="user"></i><span>Friends</span></button>
+        <button class="nav" type="button" data-nav="people"><i data-icon="users"></i><span>People</span></button>
+        <button class="nav" type="button" data-nav="feed"><i data-icon="sparkle"></i><span>Feed</span></button>
+        <button class="nav" type="button" data-nav="groups"><i data-icon="users"></i><span>Groups</span></button>
+        <button class="nav" type="button" data-nav="adopt"><i data-icon="paw"></i><span>Adopt</span></button>
+        <button class="nav" type="button" data-nav="ads"><i data-icon="megaphone"></i><span>Ads</span></button>
+        <button class="nav" type="button" data-nav="notifications"><i data-icon="bell"></i><span>Notifications</span><b class="nav-badge hidden" id="notifNavBadge">0</b></button>
+      </nav>
+      <div class="nav-foot">
+        <button class="nav" type="button" data-nav="settings"><i data-icon="gear"></i><span>Settings</span></button>
+        <button class="nav" type="button" data-nav="about"><i data-icon="info"></i><span>About</span></button>
+        <button class="nav" type="button" data-nav="monitor" id="monitorNav" hidden><i data-icon="shield"></i><span>Monitor</span></button>
+        <button class="nav" type="button" data-nav="me"><i data-icon="user"></i><span>Me</span></button>
+        <button class="nav" type="button" id="signOutBtn"><i data-icon="power"></i><span>Sign out</span></button>
+      </div>
+    </aside>
+
+    <!-- Topbar -->
+    <header id="topbar">
+      <div id="envBar" aria-live="off">
+        <div class="env-time"><b id="envTime">--:--</b><small id="envDate"></small></div>
+        <span id="envIconWrap" aria-hidden="true"><i data-icon="cloud"></i></span>
+        <b id="envTemp">--°</b>
+        <span class="env-cond" id="envCond"></span>
+        <span id="envCity"></span>
+        <span id="envHumidity"></span>
+        <span id="envWind"></span>
+        <button class="icon-btn sm" id="envBtn" type="button" aria-label="Location and weather" title="Location and weather"><i data-icon="pin"></i></button>
+      </div>
+      <div id="globalSearch">
+        <input type="search" id="searchInput" placeholder="Search people, groups, posts, pets, ads…" autocomplete="off" maxlength="60">
+        <div id="searchResults" class="hidden" role="listbox"></div>
+      </div>
+      <button class="icon-btn" id="notifyBell" type="button" aria-label="Notifications" title="Notifications">
+        <i data-icon="bell"></i>
+        <span class="nav-badge hidden" id="notifyBadge">0</span>
+      </button>
+      <button class="icon-btn" id="rightToggle" type="button" aria-label="Toggle side panel" title="Toggle side panel"><i data-icon="grid"></i></button>
+      <button id="avatarBtn" type="button" aria-label="My profile" title="My profile"></button>
+    </header>
+
+    <!-- Env popover -->
+    <div id="envPop" class="hidden" role="dialog" aria-label="Location">
       <p class="hint">Weather uses your location only after you allow it. You can also choose a city.</p>
       <button class="btn sm" id="envUseLoc" type="button"><i data-icon="pin"></i>Use my location</button>
       <select id="envCitySel" aria-label="Choose a city"></select>
     </div>
-  </div>
 
-    <aside class="rail">
-      <div class="rail-mark" data-brand></div>
-      <nav class="navs">
-        <button class="nav on" type="button" data-nav="chats"><i data-icon="chat"></i><span>Chats</span><b class="nav-badge hidden" id="chatsBadge">0</b></button>
-        <button class="nav" type="button" data-nav="feed"><i data-icon="sparkle"></i><span>Feed</span></button>
-        <button class="nav" type="button" data-nav="adopt"><i data-icon="paw"></i><span>Adopt</span></button>
-        <button class="nav" type="button" data-nav="ads"><i data-icon="megaphone"></i><span>Ads</span></button>
-        <button class="nav" type="button" data-nav="me"><i data-icon="user"></i><span>Me</span></button>
-      </nav>
-      <div class="rail-foot">
-        <button class="nav" type="button" data-nav="settings"><i data-icon="gear"></i><span>Settings</span></button>
-        <button class="nav" type="button" data-nav="about"><i data-icon="info"></i><span>About</span></button>
-        <button class="nav" type="button" id="adminNav" hidden><i data-icon="shield"></i><span>Admin</span></button>
-        <button class="nav" type="button" data-signout><i data-icon="power"></i><span>Sign out</span></button>
-      </div>
-    </aside>
-
-    <main class="stage">
-
-      <!-- Chats: people search, requests, groups, friends, conversations -->
-      <section class="view on" id="chats" data-view="chats">
-        <aside class="side">
-          <div class="me-row">
-            <div class="me" id="meBox"></div>
-            <button class="icon-btn sm notify-btn" id="notifyBtn" type="button" aria-label="Turn on notifications"><i data-icon="bell"></i></button>
-            <button class="icon-btn sm" id="settingsBtn" type="button" aria-label="Settings" title="Settings"><i data-icon="gear"></i></button>
-            <button class="icon-btn sm" id="monitorBtn" type="button" title="Conversation monitor" aria-label="Conversation monitor" hidden><i data-icon="shield"></i></button>
-          </div>
-          <div class="search-box">
-            <i data-icon="search"></i>
-            <input id="peopleSearch" type="search" placeholder="Search people by name or ID" autocomplete="off" maxlength="40">
-          </div>
-          <ul class="list" id="peopleResults" hidden></ul>
-          <div id="sideLists">
-            <div id="reqWrap" class="hidden">
-              <h3>Requests</h3>
-              <ul class="list" id="reqList"></ul>
+    <!-- Workspace with 12 views -->
+    <main id="workspace">
+      <!-- Chats -->
+      <section class="view on" data-view="chats" id="chats">
+        <div class="view-inner" id="chatsView" style="max-width:none;padding:0;display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - var(--topbar-h));">
+          <aside class="side">
+            <div class="me-row">
+              <div class="me" id="meBox"></div>
             </div>
-            <div class="sec-head">
-              <h3>Groups</h3>
-              <button class="link" id="newGroup" type="button"><i data-icon="plus"></i>New group</button>
-            </div>
-            <ul class="list" id="groupList"></ul>
-            <h3>Friends</h3>
-            <ul class="list" id="friendList"></ul>
-          </div>
-        </aside>
-
-        <section class="chat">
-          <div class="empty-chat" id="emptyChat">
-            <div class="empty-orb" aria-hidden="true"><i data-icon="chat"></i></div>
-            <h2>Pick a conversation</h2>
-            <p class="hint">Open a friend or group to chat, or start an audio or video call with a shared whiteboard.</p>
-          </div>
-
-          <div class="chat-box hidden" id="chatBox">
-            <header class="head">
-              <button class="icon-btn back" id="backBtn" type="button" aria-label="Back"><i data-icon="back"></i></button>
-              <div id="chatAv" class="chat-av"></div>
-              <div class="grow chat-title" id="chatHeadInfo">
-                <strong id="chatName"></strong>
-                <small id="chatSub"></small>
-              </div>
-              <div class="head-acts" id="chatActs">
-                <button class="icon-btn" type="button" data-head="search" title="Search in chat" aria-label="Search in chat"><i data-icon="search"></i></button>
-                <button class="icon-btn" type="button" data-call="audio" title="Audio call" aria-label="Audio call"><i data-icon="phone"></i></button>
-                <button class="icon-btn" type="button" data-call="video" title="Video call" aria-label="Video call"><i data-icon="video"></i></button>
-                <button class="icon-btn" type="button" data-head="info" title="Info" aria-label="Info"><i data-icon="info"></i></button>
-              </div>
-            </header>
-            <div class="chat-search hidden" id="chatSearch">
+            <div class="search-box">
               <i data-icon="search"></i>
-              <input id="chatSearchInput" placeholder="Search in this conversation" autocomplete="off">
+              <input id="peopleSearch" type="search" placeholder="Search people by name or ID" autocomplete="off" maxlength="40">
             </div>
-            <div class="msgs" id="msgs"></div>
-            <div class="reply-bar hidden" id="replyBar">
-              <span id="replyText"></span>
-              <button class="icon-btn sm" id="replyCancel" type="button" aria-label="Cancel reply"><i data-icon="x"></i></button>
+            <ul class="list" id="peopleResults" hidden></ul>
+            <div id="sideLists">
+              <div id="reqWrap" class="hidden">
+                <h3>Requests</h3>
+                <ul class="list" id="reqList"></ul>
+              </div>
+              <div class="sec-head">
+                <h3>Groups</h3>
+                <button class="link" id="newGroup" type="button"><i data-icon="plus"></i>New group</button>
+              </div>
+              <ul class="list" id="groupList"></ul>
+              <h3>Friends</h3>
+              <ul class="list" id="friendList"></ul>
             </div>
-            <div class="progress chat-prog hidden" id="chatProg"><i></i></div>
-            <form class="composer" id="composer">
-              <button class="icon-btn attach-btn" id="attachBtn" type="button" aria-label="Send a photo, video, voice note or file" title="Send a photo, video, voice note or file"><i data-icon="plus"></i></button>
-              <input type="file" id="chatFile" hidden>
-              <input id="msgInput" placeholder="Write a message" maxlength="1000" autocomplete="off">
-              <button class="btn" id="sendBtn" type="submit">Send</button>
-            </form>
+          </aside>
+          <section class="chat">
+            <div class="empty-chat" id="emptyChat">
+              <div class="empty-orb" aria-hidden="true"><i data-icon="chat"></i></div>
+              <h2>Pick a conversation</h2>
+              <p class="hint">Open a friend or group to chat, or start an audio or video call with a shared whiteboard.</p>
+            </div>
+            <div class="chat-box hidden" id="chatBox">
+              <header class="head">
+                <button class="icon-btn back" id="backBtn" type="button" aria-label="Back"><i data-icon="back"></i></button>
+                <div id="chatAv" class="chat-av"></div>
+                <div class="grow chat-title" id="chatHeadInfo">
+                  <strong id="chatName"></strong>
+                  <small id="chatSub"></small>
+                </div>
+                <div class="head-acts" id="chatActs">
+                  <button class="icon-btn" type="button" data-head="search" title="Search in chat" aria-label="Search in chat"><i data-icon="search"></i></button>
+                  <button class="icon-btn" type="button" data-call="audio" title="Audio call" aria-label="Audio call"><i data-icon="phone"></i></button>
+                  <button class="icon-btn" type="button" data-call="video" title="Video call" aria-label="Video call"><i data-icon="video"></i></button>
+                  <button class="icon-btn" type="button" data-head="info" title="Info" aria-label="Info"><i data-icon="info"></i></button>
+                </div>
+              </header>
+              <div class="chat-search hidden" id="chatSearch">
+                <i data-icon="search"></i>
+                <input id="chatSearchInput" placeholder="Search in this conversation" autocomplete="off">
+              </div>
+              <div class="msgs" id="msgs"></div>
+              <div class="reply-bar hidden" id="replyBar">
+                <span id="replyText"></span>
+                <button class="icon-btn sm" id="replyCancel" type="button" aria-label="Cancel reply"><i data-icon="x"></i></button>
+              </div>
+              <div class="progress chat-prog hidden" id="chatProg"><i></i></div>
+              <form class="composer" id="composer">
+                <button class="icon-btn attach-btn" id="attachBtn" type="button" aria-label="Send a photo, video, voice note or file" title="Send a photo, video, voice note or file"><i data-icon="plus"></i></button>
+                <input type="file" id="chatFile" hidden>
+                <input id="msgInput" placeholder="Write a message" maxlength="1000" autocomplete="off">
+                <button class="btn" id="sendBtn" type="submit">Send</button>
+              </form>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- Friends -->
+      <section class="view" data-view="friends">
+        <div class="view-inner" id="friendsView">
+          <header class="page-head"><div><h1>Friends</h1><p class="hint">Your friends on Emarni. Tap one to open their profile or chat.</p></div></header>
+          <div id="reqWrapFriends" class="hidden" style="margin-bottom:18px;">
+            <h3 class="sec-title">Friend requests</h3>
+            <ul class="list" id="reqListFriends"></ul>
           </div>
-        </section>
+          <h3 class="sec-title">All friends</h3>
+          <ul class="list" id="friendListFull"></ul>
+        </div>
+      </section>
+
+      <!-- People -->
+      <section class="view" data-view="people">
+        <div class="view-inner" id="peopleView">
+          <header class="page-head"><div><h1>People</h1><p class="hint">Find anyone on Emarni by name or Emarni ID.</p></div></header>
+          <div class="search-box" style="max-width:480px;">
+            <i data-icon="search"></i>
+            <input id="peopleSearchMain" type="search" placeholder="Search by name or Emarni ID" autocomplete="off" maxlength="40">
+          </div>
+          <ul class="list" id="peopleResultsMain" style="margin-top:14px;"></ul>
+          <div id="peopleDirList"></div>
+        </div>
       </section>
 
       <!-- Feed -->
       <section class="view" data-view="feed">
-        <div class="page">
-          <header class="page-head">
-            <div>
-              <h1>Feed</h1>
-              <p class="hint">Photos, videos and voice notes from everyone on Emarni.</p>
-            </div>
-            <div class="tabs2" role="tablist">
-              <button type="button" class="on" data-feed-tab="all">Everyone</button>
-              <button type="button" data-feed-tab="friends">Friends</button>
-            </div>
-          </header>
-          <div id="feedComposer"></div>
-          <div id="feedList"></div>
+        <div class="view-inner" id="feedView">
+          <div class="page">
+            <header class="page-head">
+              <div><h1>Feed</h1><p class="hint">Photos, videos and voice notes from everyone on Emarni.</p></div>
+              <div class="seg" role="tablist">
+                <button type="button" class="on" data-feed-tab="all">Everyone</button>
+                <button type="button" data-feed-tab="friends">Friends</button>
+              </div>
+            </header>
+            <div id="feedComposer"></div>
+            <div id="feedList"></div>
+          </div>
         </div>
       </section>
 
-      <!-- Pet adoption -->
-      <section class="view" data-view="adopt">
-        <div class="page">
+      <!-- Groups -->
+      <section class="view" data-view="groups">
+        <div class="view-inner" id="groupsView">
           <header class="page-head">
-            <div>
-              <h1>Adopt a pet</h1>
-              <p class="hint">Free adoption only. Pets cannot be bought or sold on Emarni.</p>
-            </div>
-            <button class="btn" id="newPetBtn" type="button"><i data-icon="plus"></i>List a pet</button>
+            <div><h1>Groups</h1><p class="hint">Group conversations with your friends.</p></div>
+            <button class="btn" id="newGroupBtn" type="button"><i data-icon="plus"></i>New group</button>
           </header>
-          <div class="chips">
-            <button class="chip on" type="button" data-filter="All">All</button>
-            <button class="chip" type="button" data-filter="Dog">Dog</button>
-            <button class="chip" type="button" data-filter="Cat">Cat</button>
-            <button class="chip" type="button" data-filter="Bird">Bird</button>
-            <button class="chip" type="button" data-filter="Rabbit">Rabbit</button>
-            <button class="chip" type="button" data-filter="Other">Other</button>
+          <ul class="list" id="groupListFull"></ul>
+        </div>
+      </section>
+
+      <!-- Adopt -->
+      <section class="view" data-view="adopt">
+        <div class="view-inner" id="adoptView">
+          <div class="page">
+            <header class="page-head">
+              <div><h1>Adopt a pet</h1><p class="hint">Free adoption only. Pets cannot be bought or sold on Emarni.</p></div>
+              <button class="btn" id="newPetBtn" type="button"><i data-icon="plus"></i>List a pet</button>
+            </header>
+            <div class="chips">
+              <button class="chip on" type="button" data-filter="All">All</button>
+              <button class="chip" type="button" data-filter="Dog">Dog</button>
+              <button class="chip" type="button" data-filter="Cat">Cat</button>
+              <button class="chip" type="button" data-filter="Bird">Bird</button>
+              <button class="chip" type="button" data-filter="Rabbit">Rabbit</button>
+              <button class="chip" type="button" data-filter="Other">Other</button>
+            </div>
+            <div class="pet-grid" id="petGrid"></div>
+            <p class="empty hidden" id="petEmpty">No pets listed here yet.</p>
           </div>
-          <div class="pet-grid" id="petGrid"></div>
-          <p class="empty hidden" id="petEmpty">No pets listed here yet.</p>
         </div>
       </section>
 
       <!-- Ads -->
       <section class="view" data-view="ads">
-        <div class="page">
-          <header class="page-head">
-            <div>
-              <h1>Advertise</h1>
-              <p class="hint">Promote anything. Pay the amount you choose, enter the transaction ID, and an admin approves your ad.</p>
-            </div>
-            <button class="btn" id="newAdBtn" type="button"><i data-icon="plus"></i>New ad</button>
-          </header>
-          <h3 class="sec-title">Live ads</h3>
-          <div class="ad-grid" id="adsList"></div>
-          <p class="empty hidden" id="adsEmpty">No active ads right now.</p>
-          <h3 class="sec-title">My requests</h3>
-          <ul class="list plain" id="myAds"></ul>
-          <section class="hidden" id="adminAdsWrap">
-            <h3 class="sec-title">Admin: approvals and controls</h3>
-            <div class="admin-box" id="adminAds"></div>
-          </section>
-        </div>
-      </section>
-
-      <!-- Profile (built by profile.js) -->
-      <section class="view" data-view="me" id="meView"></section>
-
-      <!-- About Emarni -->
-      <section class="view" data-view="about" id="aboutView">
-        <div class="about">
-          <header class="about-hero card-glass">
-            <div class="about-brand" data-brand></div>
-            <h1>About Emarni</h1>
-            <p class="about-tagline">Connecting People. Building a Better Digital Future.</p>
-            <div class="about-actions">
-              <button class="btn ghost sm" type="button" data-go="me"><i data-icon="back"></i>Back to profile</button>
-            </div>
-          </header>
-
-          <div class="about-grid">
-            <article class="about-card card-glass">
-              <span class="ab-ic"><i data-icon="users"></i></span>
-              <h2>Who we are</h2>
-              <p>Emarni is a messaging platform developed by Raflido Studios, a software company from Bangladesh dedicated to innovation and meaningful technological advancement.</p>
-              <p>The journey of Emarni began with a vision in 2024: to create a communication platform that brings people closer while promoting a safer, cleaner, and more respectful digital environment.</p>
-              <p>At Emarni, we believe technology should serve humanity and contribute to a better world. Our mission is to make communication accessible, secure, and meaningful for everyone.</p>
-            </article>
-
-            <article class="about-card card-glass">
-              <span class="ab-ic"><i data-icon="shield"></i></span>
-              <h2>Our Mission</h2>
-              <p>Our mission is to create a digital environment where people can communicate freely and confidently without exposure to harmful or inappropriate activities.</p>
-              <p>Emarni is designed with security and user protection at its core. Through intelligent moderation bots and advanced security measures, we aim to prevent inappropriate activities and maintain a positive experience for our users.</p>
-              <p>We are committed to continuously improving our platform to make it more secure, reliable, and accessible.</p>
-            </article>
-
-            <article class="about-card card-glass">
-              <span class="ab-ic"><i data-icon="sparkle"></i></span>
-              <h2>Our Vision</h2>
-              <p>We envision a future where communication is not limited by internet access or data costs.</p>
-              <p>By 2035, our goal is to enable people around the world to communicate without requiring a conventional mobile data package or internet subscription.</p>
-              <p>We believe that access to communication should be a fundamental part of a connected world, and we are working toward making this vision a reality.</p>
-            </article>
-
-            <article class="about-card about-wide card-glass">
-              <span class="ab-ic"><i data-icon="megaphone"></i></span>
-              <h2>Emarni Radio &amp; TV</h2>
-              <p>As part of our long-term vision, Raflido Studios plans to introduce Emarni Radio &amp; TV, bringing satellite-based radio and television broadcasting to the Emarni platform.</p>
-              <p>Our goal is to make radio and television accessible to users without requiring mobile data or an internet connection.</p>
-              <p>We also envision a platform where users can create and operate their own radio and television stations, allowing them to share their creativity, ideas, and content with audiences around the world.</p>
-              <p>These initiatives represent our commitment to expanding the possibilities of digital communication and entertainment.</p>
-            </article>
-
-            <article class="about-card card-glass">
-              <span class="ab-ic"><i data-icon="info"></i></span>
-              <h2>Developed by Raflido Studios</h2>
-              <p>Emarni is proudly developed by Raflido Studios, a Bangladesh-based software company focused on building innovative digital products and technological solutions.</p>
-              <p>All intellectual property rights and copyrights associated with Emarni are owned by Raflido Studios.</p>
-            </article>
-
-            <article class="about-card card-glass">
-              <span class="ab-ic"><i data-icon="heart"></i></span>
-              <h2>Our Commitment</h2>
-              <p>At Emarni, we are committed to building more than just a messaging application.</p>
-              <p>We are building a platform that brings people closer, encourages positive communication, and opens new possibilities for a connected digital future.</p>
-            </article>
-          </div>
-
-          <p class="about-sign">Emarni — A New Era of Communication.<br>Developed by Raflido Studios.</p>
-        </div>
-      </section>
-
-      <!-- Settings -->
-      <section class="view" data-view="settings" id="settingsView"></section>
-
-      <!-- Admin: conversation monitor -->
-      <section class="view" data-view="monitor" id="monitorView">
-        <div class="page mon">
-          <header class="page-head">
-            <div>
-              <h1>Conversation monitor</h1>
-              <p class="hint">Read-only. Every direct and group conversation. Each time you open one, it is logged in the audit trail.</p>
-            </div>
-            <button class="btn ghost sm" id="monRefresh" type="button"><i data-icon="sparkle"></i>Refresh</button>
-          </header>
-          <div class="mon-grid">
-            <aside class="mon-side">
-              <div class="search-box"><i data-icon="search"></i><input id="monSearch" placeholder="Search by name" autocomplete="off"></div>
-              <ul class="list plain" id="monList"></ul>
-            </aside>
-            <section class="mon-main">
-              <div class="mon-head hidden" id="monHead">
-                <div class="grow"><strong id="monTitle"></strong><small id="monMeta"></small></div>
-                <button class="icon-btn sm" id="monClose" type="button" aria-label="Close conversation"><i data-icon="x"></i></button>
-              </div>
-              <div class="mon-msgs" id="monMsgs"><p class="empty">Choose a conversation on the left.</p></div>
+        <div class="view-inner" id="adsView">
+          <div class="page">
+            <header class="page-head">
+              <div><h1>Advertise</h1><p class="hint">Promote anything. Pay the amount you choose, enter the transaction ID, and an admin approves your ad.</p></div>
+              <button class="btn" id="newAdBtn" type="button"><i data-icon="plus"></i>New ad</button>
+            </header>
+            <h3 class="sec-title">Live ads</h3>
+            <div class="ad-grid" id="adsList"></div>
+            <p class="empty hidden" id="adsEmpty">No active ads right now.</p>
+            <h3 class="sec-title">My requests</h3>
+            <ul class="list plain" id="myAds"></ul>
+            <section class="hidden" id="adminAdsWrap">
+              <h3 class="sec-title">Admin: approvals and controls</h3>
+              <div class="admin-box" id="adminAds"></div>
             </section>
           </div>
         </div>
       </section>
+
+      <!-- Notifications -->
+      <section class="view" data-view="notifications">
+        <div class="view-inner" id="notificationsView">
+          <div class="page">
+            <header class="page-head">
+              <div><h1>Notifications</h1><p class="hint">Friend requests and activity.</p></div>
+              <button class="btn ghost sm" type="button" id="notifyMarkAllFull"><i data-icon="check"></i>Mark all read</button>
+            </header>
+            <div class="notify-list" id="notifyListFull"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings (settings.js renders) -->
+      <section class="view" data-view="settings">
+        <div class="view-inner" id="settingsView"></div>
+      </section>
+
+      <!-- About (static) -->
+      <section class="view" data-view="about">
+        <div class="view-inner" id="aboutView">
+          <div class="about">
+            <header class="about-hero card-glass">
+              <div class="about-brand" data-brand></div>
+              <h1>About Emarni</h1>
+              <p class="about-tagline">Connecting People. Building a Better Digital Future.</p>
+              <div class="about-actions">
+                <button class="btn ghost sm" type="button" data-go="me"><i data-icon="back"></i>Back to profile</button>
+              </div>
+            </header>
+            <div class="about-grid">
+              <article class="about-card card-glass">
+                <span class="ab-ic"><i data-icon="users"></i></span>
+                <h2>Who we are</h2>
+                <p>Emarni is a messaging platform developed by Raflido Studios, a software company from Bangladesh dedicated to innovation and meaningful technological advancement.</p>
+                <p>The journey of Emarni began with a vision in 2024: to create a communication platform that brings people closer while promoting a safer, cleaner, and more respectful digital environment.</p>
+              </article>
+              <article class="about-card card-glass">
+                <span class="ab-ic"><i data-icon="shield"></i></span>
+                <h2>Our Mission</h2>
+                <p>Our mission is to create a digital environment where people can communicate freely and confidently without exposure to harmful or inappropriate activities.</p>
+                <p>Emarni is designed with security and user protection at its core. Through intelligent moderation and advanced security measures, we aim to maintain a positive experience for our users.</p>
+              </article>
+              <article class="about-card card-glass">
+                <span class="ab-ic"><i data-icon="sparkle"></i></span>
+                <h2>Our Vision</h2>
+                <p>We envision a future where communication is not limited by internet access or data costs. By 2035, our goal is to enable people around the world to communicate without requiring a conventional mobile data package.</p>
+              </article>
+              <article class="about-card about-wide card-glass">
+                <span class="ab-ic"><i data-icon="megaphone"></i></span>
+                <h2>Emarni Radio &amp; TV</h2>
+                <p>As part of our long-term vision, Raflido Studios plans to introduce Emarni Radio &amp; TV, bringing satellite-based radio and television broadcasting to the Emarni platform — accessible without mobile data or an internet connection.</p>
+              </article>
+              <article class="about-card card-glass">
+                <span class="ab-ic"><i data-icon="info"></i></span>
+                <h2>Developed by Raflido Studios</h2>
+                <p>Emarni is proudly developed by Raflido Studios, a Bangladesh-based software company. All intellectual property rights and copyrights associated with Emarni are owned by Raflido Studios.</p>
+              </article>
+              <article class="about-card card-glass">
+                <span class="ab-ic"><i data-icon="heart"></i></span>
+                <h2>Our Commitment</h2>
+                <p>At Emarni, we are committed to building more than a messaging application. We are building a platform that brings people closer, encourages positive communication, and opens new possibilities for a connected digital future.</p>
+              </article>
+            </div>
+            <p class="about-sign">Emarni — A New Era of Communication.<br>Developed by Raflido Studios.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Monitor (admin only; monitor.js renders) -->
+      <section class="view" data-view="monitor">
+        <div class="view-inner" id="monitorView">
+          <div class="page mon">
+            <header class="page-head">
+              <div><h1>Conversation monitor</h1><p class="hint">Read-only. Every direct and group conversation. Each time you open one, it is logged in the audit trail.</p></div>
+              <button class="btn ghost sm" id="monRefresh" type="button"><i data-icon="sparkle"></i>Refresh</button>
+            </header>
+            <div class="mon-grid">
+              <aside class="mon-side">
+                <div class="search-box"><i data-icon="search"></i><input id="monSearch" placeholder="Search by name" autocomplete="off"></div>
+                <ul class="list plain" id="monList"></ul>
+              </aside>
+              <section class="mon-main">
+                <div class="mon-head hidden" id="monHead">
+                  <div class="grow"><strong id="monTitle"></strong><small id="monMeta"></small></div>
+                  <button class="icon-btn sm" id="monClose" type="button" aria-label="Close conversation"><i data-icon="x"></i></button>
+                </div>
+                <div class="mon-msgs" id="monMsgs"><p class="empty">Choose a conversation on the left.</p></div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Me (profile.js renders) -->
+      <section class="view" data-view="me">
+        <div class="view-inner" id="meView"></div>
+      </section>
     </main>
 
-    <nav class="tabbar" aria-label="Main">
-      <button class="nav on" type="button" data-nav="chats"><i data-icon="chat"></i><span>Chats</span></button>
-      <button class="nav" type="button" data-nav="feed"><i data-icon="sparkle"></i><span>Feed</span></button>
-      <button class="nav" type="button" data-nav="adopt"><i data-icon="paw"></i><span>Adopt</span></button>
-      <button class="nav" type="button" data-nav="ads"><i data-icon="megaphone"></i><span>Ads</span></button>
-      <button class="nav" type="button" data-nav="me"><i data-icon="user"></i><span>Me</span></button>
-    </nav>
+    <!-- Right panel -->
+    <aside id="rightPanel" class="hidden">
+      <div class="rp-slot" id="rpOnline"><h3>Friends</h3><div id="rpOnlineList"></div></div>
+      <div class="rp-slot" id="rpRecent"><h3>Recent</h3><div id="rpRecentList"></div></div>
+      <div class="rp-slot" id="rpSuggest"><h3>Suggested</h3><div id="rpSuggestList"></div></div>
+      <div class="rp-slot" id="rpTrending"><h3>Trending</h3><div id="rpTrendingList"></div></div>
+    </aside>
   </div>
 
-  <!-- Another person's profile -->
+  <!-- Bottom nav (phone) -->
+  <nav id="bottomNav" aria-label="Main">
+    <button class="nav on" type="button" data-nav="chats"><i data-icon="chat"></i><span>Chats</span></button>
+    <button class="nav" type="button" data-nav="feed"><i data-icon="sparkle"></i><span>Feed</span></button>
+    <button class="nav" type="button" data-nav="adopt"><i data-icon="paw"></i><span>Adopt</span></button>
+    <button class="nav" type="button" data-nav="ads"><i data-icon="megaphone"></i><span>Ads</span></button>
+    <button class="nav" type="button" data-nav="me"><i data-icon="user"></i><span>Me</span></button>
+    <button class="nav" type="button" id="moreBtn"><i data-icon="grid"></i><span>More</span></button>
+  </nav>
+
+  <!-- More sheet (phone) -->
+  <div id="moreSheet" class="hidden">
+    <button class="nav" type="button" data-nav="friends"><i data-icon="user"></i><span>Friends</span></button>
+    <button class="nav" type="button" data-nav="people"><i data-icon="users"></i><span>People</span></button>
+    <button class="nav" type="button" data-nav="groups"><i data-icon="users"></i><span>Groups</span></button>
+    <button class="nav" type="button" data-nav="notifications"><i data-icon="bell"></i><span>Notifications</span></button>
+    <button class="nav" type="button" data-nav="settings"><i data-icon="gear"></i><span>Settings</span></button>
+    <button class="nav" type="button" data-nav="about"><i data-icon="info"></i><span>About</span></button>
+    <button class="nav" type="button" data-nav="monitor" id="monitorNavMore" hidden><i data-icon="shield"></i><span>Monitor</span></button>
+    <button class="nav" type="button" id="signOutBtnMobile"><i data-icon="power"></i><span>Sign out</span></button>
+  </div>
+
+  <!-- Call layer (S4 owns inner markup; included here for backward compat) -->
+  <div id="callLayer" hidden></div>
+        <span class="live-dot">LIVE</span>
+      </header>
+      <div class="call-body">
+        <div class="tiles" id="tiles"></div>
+        <aside class="board-panel" id="boardPanel">
+          <div class="board-tools">
+            <div class="tool-row">
+              <button class="tool on" type="button" data-tool="pen" title="Pen" aria-label="Pen"><i data-icon="pen"></i></button>
+              <button class="tool" type="button" data-tool="text" title="Type text" aria-label="Type text"><i data-icon="type"></i></button>
+              <button class="tool" type="button" data-tool="line" title="Line" aria-label="Line"><i data-icon="line"></i></button>
+              <button class="tool" type="button" data-tool="arrow" title="Arrow" aria-label="Arrow"><i data-icon="arrow"></i></button>
+              <button class="tool" type="button" data-tool="rect" title="Rectangle" aria-label="Rectangle"><i data-icon="rect"></i></button>
+              <button class="tool" type="button" data-tool="circle" title="Circle" aria-label="Circle"><i data-icon="circle"></i></button>
+              <button class="tool" type="button" data-tool="erase" title="Eraser" aria-label="Eraser"><i data-icon="eraser"></i></button>
+            </div>
+            <div class="tool-row">
+              <div class="swatches" id="boardColors"></div>
+              <label class="range">Size <input type="range" id="boardWidth" min="2" max="28" value="6"></label>
+            </div>
+            <div class="tool-row">
+              <button class="chip" type="button" id="boardGrid"></button>
+              <button class="chip" type="button" id="boardCalc"><i data-icon="calc"></i><span>Calculator</span></button>
+              <button class="chip" type="button" id="boardUndo"><i data-icon="undo"></i><span>Undo</span></button>
+              <button class="chip" type="button" id="boardClear"><i data-icon="trash"></i><span>Clear mine</span></button>
+              <button class="chip" type="button" id="boardLock" hidden><i data-icon="lock"></i><span>Lock board</span></button>
+            </div>
+          </div>
+          <div class="board-paper"><canvas id="board"></canvas></div>
+          <p class="hint" id="boardNote"></p>
+        </aside>
+      </div>
+      <footer class="call-bar">
+        <button class="round" type="button" id="btnMic" title="Microphone" aria-label="Microphone"><i data-icon="mic"></i></button>
+        <button class="round" type="button" id="btnCam" title="Camera" aria-label="Camera"><i data-icon="video"></i></button>
+        <button class="round" type="button" id="btnBoard" title="Whiteboard" aria-label="Whiteboard"><i data-icon="pen"></i></button>
+        <button class="round end" type="button" id="btnHang" title="End call" aria-label="End call"><i data-icon="hangup"></i></button>
+      </footer>
+    </section>
+    <section class="ring hidden" id="ringView" aria-live="assertive">
+      <div class="ring-card">
+        <div class="ring-av" id="ringAv"></div>
+        <h2 id="ringName"></h2>
+        <p class="hint" id="ringType"></p>
+        <button class="link ring-sound" id="ringSound" type="button" hidden>Tap to hear the ringtone</button>
+        <div class="ring-acts">
+          <button class="round decline" type="button" id="ringDecline" aria-label="Decline"><i data-icon="x"></i></button>
+          <button class="round accept" type="button" id="ringAccept" aria-label="Accept"><i data-icon="phone"></i></button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- User profile overlay (people.js openUser) -->
   <section class="user-view" id="userView" aria-label="Profile">
     <header class="uv-head">
       <button class="icon-btn" id="userBack" type="button" aria-label="Close"><i data-icon="back"></i></button>
-      <strong>Profile</strong>
-      <span></span>
+      <strong>Profile</strong><span></span>
     </header>
     <div class="uv-scroll">
       <div class="card-glass" id="userCard"></div>
-      <h3>Posts</h3>
+      <h3 style="margin:18px 0 10px;">Posts</h3>
       <div id="userPosts"></div>
     </div>
   </section>
 
-  <!-- Call screen -->
-  <section class="call" id="callView" aria-label="Call">
-    <header class="call-head">
-      <div>
-        <strong id="callTitle">Call</strong>
-        <small id="callTimer">00:00</small>
-        <small id="callStatus" class="call-status"></small>
-      </div>
-      <span class="live-dot">LIVE</span>
-    </header>
-    <div class="call-body">
-      <div class="tiles" id="tiles"></div>
-      <aside class="board-panel" id="boardPanel">
-        <div class="board-tools">
-          <div class="tool-row">
-            <button class="tool on" type="button" data-tool="pen" title="Pen" aria-label="Pen"><i data-icon="pen"></i></button>
-            <button class="tool" type="button" data-tool="text" title="Type text" aria-label="Type text"><i data-icon="type"></i></button>
-            <button class="tool" type="button" data-tool="line" title="Line" aria-label="Line"><i data-icon="line"></i></button>
-            <button class="tool" type="button" data-tool="arrow" title="Arrow" aria-label="Arrow"><i data-icon="arrow"></i></button>
-            <button class="tool" type="button" data-tool="rect" title="Rectangle" aria-label="Rectangle"><i data-icon="rect"></i></button>
-            <button class="tool" type="button" data-tool="circle" title="Circle" aria-label="Circle"><i data-icon="circle"></i></button>
-            <button class="tool" type="button" data-tool="erase" title="Eraser" aria-label="Eraser"><i data-icon="eraser"></i></button>
-          </div>
-          <div class="tool-row">
-            <div class="swatches" id="boardColors"></div>
-            <label class="range">Size <input type="range" id="boardWidth" min="2" max="28" value="6"></label>
-          </div>
-          <div class="tool-row">
-            <button class="chip" type="button" id="boardGrid"></button>
-            <button class="chip" type="button" id="boardCalc"><i data-icon="calc"></i><span>Calculator</span></button>
-            <button class="chip" type="button" id="boardUndo"><i data-icon="undo"></i><span>Undo</span></button>
-            <button class="chip" type="button" id="boardClear"><i data-icon="trash"></i><span>Clear mine</span></button>
-            <button class="chip" type="button" id="boardLock" hidden><i data-icon="lock"></i><span>Lock board</span></button>
-          </div>
-        </div>
-        <div class="board-paper"><canvas id="board"></canvas></div>
-        <p class="hint" id="boardNote"></p>
-      </aside>
-    </div>
-    <footer class="call-bar">
-      <button class="round" type="button" id="btnMic" title="Microphone" aria-label="Microphone"><i data-icon="mic"></i></button>
-      <button class="round" type="button" id="btnCam" title="Camera" aria-label="Camera"><i data-icon="video"></i></button>
-      <button class="round" type="button" id="btnBoard" title="Whiteboard" aria-label="Whiteboard"><i data-icon="pen"></i></button>
-      <button class="round end" type="button" id="btnHang" title="End call" aria-label="End call"><i data-icon="hangup"></i></button>
-    </footer>
-  </section>
+  <!-- Notification drawer (S5 owns inner markup) -->
 
-  <!-- Incoming call -->
-  <section class="ring" id="ringView" aria-live="assertive">
-    <div class="ring-card">
-      <div class="ring-av" id="ringAv"></div>
-      <h2 id="ringName"></h2>
-      <p class="hint" id="ringType"></p>
-      <button class="link ring-sound" id="ringSound" type="button" hidden>Tap to hear the ringtone</button>
-      <div class="ring-acts">
-        <button class="round decline" type="button" id="ringDecline" aria-label="Decline"><i data-icon="x"></i></button>
-        <button class="round accept" type="button" id="ringAccept" aria-label="Accept"><i data-icon="phone"></i></button>
-      </div>
-    </div>
-  </section>
 
-  <!-- Notifications (in-app cards) -->
+  <!-- In-app notice cards (notify.js uses #noticeStack) -->
   <div class="notice-stack" id="noticeStack" aria-live="polite"></div>
 
-  <!-- Create post (Facebook style) -->
-  <dialog id="dlgPost" class="sheet post-dlg">
-    <form id="pbForm" class="pb" novalidate>
-      <header class="pb-head">
-        <h2>Create post</h2>
-        <button class="icon-btn sm" type="button" data-close aria-label="Close"><i data-icon="x"></i></button>
-      </header>
-      <div class="pb-user">
-        <div id="pbAv"></div>
-        <div class="pb-meta"><b id="pbName"></b><small><i data-icon="users"></i>Public</small></div>
+  <!-- Dialog root (shared dialogs) -->
+  <div id="dialogRoot">
+    <dialog id="dlgPost" class="sheet post-dlg">
+      <form id="pbForm" class="pb" novalidate>
+        <header class="pb-head">
+          <h2>Create post</h2>
+          <button class="icon-btn sm" type="button" data-close aria-label="Close"><i data-icon="x"></i></button>
+        </header>
+        <div class="pb-user"><div id="pbAv"></div><div class="pb-meta"><b id="pbName"></b><small><i data-icon="users"></i>Public</small></div></div>
+        <textarea id="pbText" class="pb-text" rows="4" maxlength="2000" placeholder="What's on your mind?"></textarea>
+        <div class="pb-preview hidden" id="pbPreview"></div>
+        <div class="progress hidden" id="pbProg"><i></i></div>
+        <div class="pb-add">
+          <span>Add to your post</span>
+          <div class="pb-tools">
+            <button type="button" class="pb-tool" data-pb="image"><i data-icon="image"></i>Photo</button>
+            <button type="button" class="pb-tool" data-pb="video"><i data-icon="film"></i>Video</button>
+            <button type="button" class="pb-tool" data-pb="audio"><i data-icon="music"></i>Audio</button>
+            <button type="button" class="pb-tool" id="pbRec"><i data-icon="mic"></i>Voice</button>
+          </div>
+        </div>
+        <input type="file" id="pbFile" hidden>
+        <p class="error" id="pbErr" role="alert"></p>
+        <div class="row between">
+          <span class="hint">Photo 10 MB · Video 150 MB · Audio 20 MB</span>
+          <button class="btn" id="pbSubmit" type="submit" disabled>Post</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="dlgNotice">
+      <div class="fields">
+        <h2>Before you continue</h2>
+        <ul class="notice" style="list-style:disc;padding-left:20px;display:flex;flex-direction:column;gap:8px;color:var(--text-dim);font-size:0.88rem;">
+          <li>Messages, posts, ads and adoption listings are visible to the people they are shared with. Posts, ads and pet listings are visible to every member.</li>
+          <li>Messages and posts are not end-to-end encrypted.</li>
+          <li>Emarni admins can review any conversation for safety and moderation. Every review is logged.</li>
+          <li>A safety copy of a deleted message is kept for 30 days. Your password is never visible to anyone, including admins.</li>
+          <li>Calls go directly between devices and are not recorded by Emarni.</li>
+        </ul>
+        <div class="row"><button class="btn" type="button" id="noticeOk">I understand</button></div>
       </div>
-      <textarea id="pbText" class="pb-text" rows="4" maxlength="2000" placeholder="What's on your mind?"></textarea>
-      <div class="pb-preview hidden" id="pbPreview"></div>
-      <div class="progress hidden" id="pbProg"><i></i></div>
-      <div class="pb-add">
-        <span>Add to your post</span>
-        <div class="pb-tools">
-          <button type="button" class="pb-tool" data-pb="image"><i data-icon="image"></i>Photo</button>
-          <button type="button" class="pb-tool" data-pb="video"><i data-icon="film"></i>Video</button>
-          <button type="button" class="pb-tool" data-pb="audio"><i data-icon="music"></i>Audio</button>
-          <button type="button" class="pb-tool" id="pbRec"><i data-icon="mic"></i>Voice</button>
+    </dialog>
+    <dialog id="dlgText" class="sheet">
+      <form id="dlgTextForm" class="fields">
+        <h2 id="dlgTextTitle">Enter text</h2>
+        <textarea id="dlgTextInput" rows="3" maxlength="300"></textarea>
+        <div class="row">
+          <button class="link" type="button" id="dlgTextCancel">Cancel</button>
+          <button class="btn" type="submit" id="dlgTextOk">Send</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="dlgGroup" class="sheet">
+      <form id="gForm" class="fields">
+        <h2>New group</h2>
+        <input id="gName" maxlength="40" placeholder="Group name, e.g. Physics Batch 2026">
+        <span class="hint">Colour</span>
+        <div class="swatches" id="gColors"></div>
+        <span class="hint">Members (from your friends)</span>
+        <div class="pick-list" id="gFriends"></div>
+        <div class="row">
+          <button class="link" type="button" data-close>Cancel</button>
+          <button class="btn" type="submit" id="gCreate">Create group</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="dlgInfo" class="sheet">
+      <div class="fields">
+        <h2 id="infoTitle">Group</h2>
+        <ul class="list plain" id="infoBody"></ul>
+        <span class="hint">Add a friend</span>
+        <div class="row between">
+          <select id="infoAddSel"></select>
+          <button class="btn sm" type="button" id="infoAdd">Add</button>
+        </div>
+        <div class="row">
+          <button class="btn sm danger" type="button" id="infoLeave">Leave group</button>
+          <button class="link" type="button" data-close>Close</button>
         </div>
       </div>
-      <input type="file" id="pbFile" hidden>
-      <p class="error" id="pbErr" role="alert"></p>
-      <div class="row between">
-        <span class="hint">Photo 10 MB · Video 150 MB · Audio 20 MB</span>
-        <button class="btn" id="pbSubmit" type="submit" disabled>Post</button>
+    </dialog>
+    <dialog id="dlgList" class="sheet">
+      <div class="fields">
+        <h2 id="listTitle">List</h2>
+        <ul class="list plain" id="listBody"></ul>
+        <div class="row"><button class="link" type="button" data-close>Close</button></div>
       </div>
-    </form>
-  </dialog>
+    </dialog>
+    <dialog id="dlgPet" class="sheet wide">
+      <form id="petForm" class="fields">
+        <h2>List a pet for free adoption</h2>
+        <p class="hint">Adoption only. Pets cannot be bought or sold on Emarni, so there is no price field.</p>
+        <div class="pf-grid">
+          <label>Name <input id="petName" maxlength="60" required></label>
+          <label>Species
+            <select id="petSpecies"><option>Dog</option><option>Cat</option><option>Bird</option><option>Rabbit</option><option>Other</option></select>
+          </label>
+          <label>Breed <input id="petBreed" maxlength="40" placeholder="Mixed, Persian"></label>
+          <label>Age <input id="petAge" maxlength="30" placeholder="2 years, 6 months"></label>
+          <label>Gender
+            <select id="petGender"><option>Unknown</option><option>Male</option><option>Female</option></select>
+          </label>
+          <label>Location <input id="petLocation" maxlength="60" placeholder="Area, city" required></label>
+          <label class="wide">About <textarea id="petDesc" rows="3" maxlength="500" placeholder="Temperament, health, what they need"></textarea></label>
+          <label class="wide">Photo (optional)
+            <input type="file" id="petPhoto" accept="image/*">
+            <img id="petPhotoPrev" class="thumb" alt="Preview" hidden>
+          </label>
+        </div>
+        <div class="row">
+          <button class="link" type="button" data-close>Cancel</button>
+          <button class="btn" type="submit" id="petSave">List pet</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="dlgAdopt" class="sheet">
+      <form id="adoptForm" class="fields">
+        <h2 id="adoptTitle">Adopt</h2>
+        <p class="hint">Tell the owner about your home and why you want this pet.</p>
+        <textarea id="adoptMsg" rows="4" maxlength="500" placeholder="Hi, I have a garden and two kids"></textarea>
+        <div class="row">
+          <button class="link" type="button" data-close>Cancel</button>
+          <button class="btn" type="submit" id="adoptSend">Send request</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="dlgAd" class="sheet wide">
+      <form id="adForm" class="fields">
+        <h2>New ad request</h2>
+        <div class="pf-grid">
+          <label>Title <input id="adTitle" maxlength="80" required></label>
+          <label>Category
+            <select id="adCategory"><option>Education</option><option>Food</option><option>Tech</option><option>Services</option><option>Jobs</option><option>Shop</option><option>Other</option></select>
+          </label>
+          <label class="wide">Text <textarea id="adBody" rows="2" maxlength="500" placeholder="What are you promoting?"></textarea></label>
+          <label>Link (optional) <input id="adLink" type="url" maxlength="300" placeholder="https://"></label>
+          <label>Image (optional) <input id="adImage" type="file" accept="image/*"></label>
+          <label>Days (1 to 30) <input id="adDays" type="number" min="1" max="30" value="7"></label>
+          <label>Amount you pay (BDT, min 100) <input id="adAmount" type="number" min="100" step="10" value="200"></label>
+          <label>Payment method
+            <select id="adPay"><option>bKash</option><option>Nagad</option><option>Rocket</option><option>Bank</option></select>
+          </label>
+          <label>Transaction ID <input id="adTxn" maxlength="40" placeholder="After you pay"></label>
+        </div>
+        <p class="pay-info" id="adPayInfo"></p>
+        <div class="row">
+          <button class="link" type="button" data-close>Cancel</button>
+          <button class="btn" type="submit" id="adSend">Send request</button>
+        </div>
+      </form>
+    </dialog>
+  </div>
 
-  <!-- Other dialogs -->
-  <dialog id="dlgNotice">
-    <div class="fields">
-      <h2>Before you continue</h2>
-      <ul class="notice">
-        <li>Messages, posts, ads and adoption listings are visible to the people they are shared with. Posts, ads and pet listings are visible to every member.</li>
-        <li>Messages and posts are not end-to-end encrypted.</li>
-        <li>Emarni admins can review any conversation for safety and moderation. Every review is logged.</li>
-        <li>A safety copy of a deleted message is kept for 30 days. Your password is never visible to anyone, including admins.</li>
-        <li>Calls go directly between devices and are not recorded by Emarni.</li>
-      </ul>
-      <div class="row"><button class="btn" type="button" id="noticeOk">I understand</button></div>
-    </div>
-  </dialog>
+  <!-- Toast root (ui.js toast() targets #toast) -->
+  <div id="toastRoot">
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </div>
 
-  <dialog id="dlgText" class="sheet">
-    <form id="dlgTextForm" class="fields">
-      <h2 id="dlgTextTitle">Enter text</h2>
-      <textarea id="dlgTextInput" rows="3" maxlength="300"></textarea>
-      <div class="row">
-        <button class="link" type="button" id="dlgTextCancel">Cancel</button>
-        <button class="btn" type="submit" id="dlgTextOk">Send</button>
-      </div>
-    </form>
-  </dialog>
-
-  <dialog id="dlgGroup" class="sheet">
-    <form id="gForm" class="fields">
-      <h2>New group</h2>
-      <input id="gName" maxlength="40" placeholder="Group name, e.g. Physics Batch 2026">
-      <span class="hint">Colour</span>
-      <div class="swatches" id="gColors"></div>
-      <span class="hint">Members (from your friends)</span>
-      <div class="pick-list" id="gFriends"></div>
-      <div class="row">
-        <button class="link" type="button" data-close>Cancel</button>
-        <button class="btn" type="submit" id="gCreate">Create group</button>
-      </div>
-    </form>
-  </dialog>
-
-  <dialog id="dlgInfo" class="sheet">
-    <div class="fields">
-      <h2 id="infoTitle">Group</h2>
-      <ul class="list plain" id="infoBody"></ul>
-      <span class="hint">Add a friend</span>
-      <div class="row between">
-        <select id="infoAddSel"></select>
-        <button class="btn sm" type="button" id="infoAdd">Add</button>
-      </div>
-      <div class="row">
-        <button class="btn sm danger" type="button" id="infoLeave">Leave group</button>
-        <button class="link" type="button" data-close>Close</button>
-      </div>
-    </div>
-  </dialog>
-
-  <dialog id="dlgList" class="sheet">
-    <div class="fields">
-      <h2 id="listTitle">List</h2>
-      <ul class="list plain" id="listBody"></ul>
-      <div class="row"><button class="link" type="button" data-close>Close</button></div>
-    </div>
-  </dialog>
-
-  <dialog id="dlgPet" class="sheet wide">
-    <form id="petForm" class="fields">
-      <h2>List a pet for free adoption</h2>
-      <p class="hint">Adoption only. Pets cannot be bought or sold on Emarni, so there is no price field.</p>
-      <div class="pf-grid">
-        <label>Name <input id="petName" maxlength="60" required></label>
-        <label>Species
-          <select id="petSpecies">
-            <option>Dog</option><option>Cat</option><option>Bird</option><option>Rabbit</option><option>Other</option>
-          </select>
-        </label>
-        <label>Breed <input id="petBreed" maxlength="40" placeholder="Mixed, Persian"></label>
-        <label>Age <input id="petAge" maxlength="30" placeholder="2 years, 6 months"></label>
-        <label>Gender
-          <select id="petGender"><option>Unknown</option><option>Male</option><option>Female</option></select>
-        </label>
-        <label>Location <input id="petLocation" maxlength="60" placeholder="Area, city" required></label>
-        <label class="wide">About <textarea id="petDesc" rows="3" maxlength="500" placeholder="Temperament, health, what they need"></textarea></label>
-        <label class="wide">Photo (optional)
-          <input type="file" id="petPhoto" accept="image/*">
-          <img id="petPhotoPrev" class="thumb" alt="Preview" hidden>
-        </label>
-      </div>
-      <div class="row">
-        <button class="link" type="button" data-close>Cancel</button>
-        <button class="btn" type="submit" id="petSave">List pet</button>
-      </div>
-    </form>
-  </dialog>
-
-  <dialog id="dlgAdopt" class="sheet">
-    <form id="adoptForm" class="fields">
-      <h2 id="adoptTitle">Adopt</h2>
-      <p class="hint">Tell the owner about your home and why you want this pet.</p>
-      <textarea id="adoptMsg" rows="4" maxlength="500" placeholder="Hi, I have a garden and two kids"></textarea>
-      <div class="row">
-        <button class="link" type="button" data-close>Cancel</button>
-        <button class="btn" type="submit" id="adoptSend">Send request</button>
-      </div>
-    </form>
-  </dialog>
-
-  <dialog id="dlgAd" class="sheet wide">
-    <form id="adForm" class="fields">
-      <h2>New ad request</h2>
-      <div class="pf-grid">
-        <label>Title <input id="adTitle" maxlength="80" required></label>
-        <label>Category
-          <select id="adCategory">
-            <option>Education</option><option>Food</option><option>Tech</option><option>Services</option><option>Jobs</option><option>Shop</option><option>Other</option>
-          </select>
-        </label>
-        <label class="wide">Text <textarea id="adBody" rows="2" maxlength="500" placeholder="What are you promoting?"></textarea></label>
-        <label>Link (optional) <input id="adLink" type="url" maxlength="300" placeholder="https://"></label>
-        <label>Image (optional) <input id="adImage" type="file" accept="image/*"></label>
-        <label>Days (1 to 30) <input id="adDays" type="number" min="1" max="30" value="7"></label>
-        <label>Amount you pay (BDT, min 100) <input id="adAmount" type="number" min="100" step="10" value="200"></label>
-        <label>Payment method
-          <select id="adPay"><option>bKash</option><option>Nagad</option><option>Rocket</option><option>Bank</option></select>
-        </label>
-        <label>Transaction ID <input id="adTxn" maxlength="40" placeholder="After you pay"></label>
-      </div>
-      <p class="pay-info" id="adPayInfo"></p>
-      <div class="row">
-        <button class="link" type="button" data-close>Cancel</button>
-        <button class="btn" type="submit" id="adSend">Send request</button>
-      </div>
-    </form>
-  </dialog>
-
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
-
-  <script type="module" src="app.js?v=14"></script>
+  <script type="module" src="app.js?v=9"></script>
 </body>
 </html>

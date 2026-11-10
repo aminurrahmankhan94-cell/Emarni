@@ -61,7 +61,20 @@ const PATHS = {
   fog: '<path d="M4 9h16M3 13h18M5 17h14"/>',
   droplet: '<path d="M12 3.5c3 4.2 5.5 7.4 5.5 10.2A5.5 5.5 0 0 1 6.5 13.7C6.5 10.9 9 7.7 12 3.5Z"/>',
   wind: '<path d="M3 8h11a3 3 0 1 0-3-3M3 13h16a3 3 0 1 1-3 3M3 18h7"/>',
-  dot: '<circle cx="12" cy="12" r="3"/>'
+  dot: '<circle cx="12" cy="12" r="3"/>',
+  // v9 additions (S1) — stroke paths consistent with the existing 24x24 set
+  smile: '<circle cx="12" cy="12" r="8.5"/><path d="M8.5 14.5a3.8 3.8 0 0 0 7 0"/><circle cx="9" cy="9.8" r=".7" fill="currentColor"/><circle cx="15" cy="9.8" r=".7" fill="currentColor"/>',
+  paperclip: '<path d="M20.5 11.5l-7.8 7.8a5.2 5.2 0 0 1-7.4-7.4l8.5-8.5a3.5 3.5 0 0 1 5 5l-8.6 8.5a1.8 1.8 0 0 1-2.6-2.6l7.9-7.8"/>',
+  forward: '<path d="M14.5 8.5L20 12l-5.5 3.5"/><path d="M20 12H9.5a5.5 5.5 0 0 0 0 11H13"/>',
+  reply: '<path d="M9.5 8.5L4 12l5.5 3.5"/><path d="M4 12h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+  mute: '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/>',
+  checkdouble: '<path d="M2.5 12.8l4.4 4.4L13 11"/><path d="M9.5 15.5L11 17l8.5-8.5"/>',
+  globe: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.4 3.8 5.4 3.8 8.5s-1.3 6.1-3.8 8.5c-2.5-2.4-3.8-5.4-3.8-8.5S9.5 5.9 12 3.5Z"/>',
+  moon: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.6 6.6 0 0 0 10.5 10.5Z"/>',
+  palette: '<path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.4 0 2-1 2-2.2 0-.8-.4-1.3-.4-2.1 0-.9.8-1.7 1.8-1.7H16a4.5 4.5 0 0 0 4.5-4.5c0-3.6-3.8-6.5-8.5-6.5Z"/><circle cx="7.5" cy="11" r="1" fill="currentColor"/><circle cx="10.5" cy="7.5" r="1" fill="currentColor"/><circle cx="15" cy="8" r="1" fill="currentColor"/>',
+  leave: '<path d="M14 4h4.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H14"/><path d="M10 17l-5-5 5-5M5 12h11"/>',
+  add: '<path d="M12 5v14M5 12h14"/>',
+  minus: '<path d="M5 12h14"/>'
 };
 
 // Stroke icon as an inline SVG string.

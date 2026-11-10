@@ -3,6 +3,7 @@
 import * as fb from "./firebase.js";
 import { $, esc, toast, errMsg, timeOf } from "./ui.js";
 import { icon } from "./icons.js";
+import { playSound } from "./sounds.js";
 
 let ctx = null;
 let items = [];
@@ -12,13 +13,38 @@ let current = null;
 
 export function initMonitor(context) {
   ctx = context;
-  $("#monSearch").addEventListener("input", paintList);
-  $("#monRefresh").addEventListener("click", load);
-  $("#monList").addEventListener("click", event => {
+  injectAdminLink();
+  const search = $("#monSearch");
+  if (search) search.addEventListener("input", paintList);
+  const refresh = $("#monRefresh");
+  if (refresh) refresh.addEventListener("click", load);
+  const list = $("#monList");
+  if (list) list.addEventListener("click", event => {
     const row = event.target.closest("[data-key]");
-    if (row) openConvo(row.dataset.key);
+    if (row) { playSound("click"); openConvo(row.dataset.key); }
   });
-  $("#monClose").addEventListener("click", () => closeConvo());
+  const close = $("#monClose");
+  if (close) close.addEventListener("click", () => { playSound("close"); closeConvo(); });
+}
+
+// Link to the standalone admin page (admin.html) — injected because index.html is S1-owned.
+function injectAdminLink() {
+  const head = document.querySelector('[data-view="monitor"] .page-head');
+  if (!head || head.querySelector(".mon-admin-link")) return;
+  const wrap = document.createElement("div");
+  wrap.style.display = "flex";
+  wrap.style.gap = "8px";
+  wrap.style.alignItems = "center";
+  const existing = head.querySelector(".btn") || head.querySelector("button");
+  const a = document.createElement("a");
+  a.href = "admin.html";
+  a.className = "btn ghost sm mon-admin-link";
+  a.innerHTML = `${icon("shield")}Admin panel`;
+  if (existing && existing.parentNode) {
+    existing.parentNode.insertBefore(a, existing);
+  } else {
+    head.appendChild(a);
+  }
 }
 
 export function onMonitorShow() {

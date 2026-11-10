@@ -33,6 +33,9 @@ const st = {
 let canvas = null;
 let g = null;
 let paper = null;
+// Two-step confirm for the destructive "clear" action.
+let clearArmed = false;
+let clearTimer = 0;
 
 export function initBoardUi() {
   canvas = $("#board");
@@ -60,7 +63,7 @@ export function initBoardUi() {
   $("#boardCalc").addEventListener("click", () => toggleCalc());
   initCalc(text => placeText(text));
   $("#boardUndo").addEventListener("click", undo);
-  $("#boardClear").addEventListener("click", clearBoard);
+  $("#boardClear").addEventListener("click", onClearClick);
   $("#boardLock").addEventListener("click", toggleLock);
 
   canvas.addEventListener("pointerdown", onDown);
@@ -112,6 +115,7 @@ export function closeBoard() {
   st.unsubs = [];
   st.rid = null;
   st.cur = null;
+  disarmClear();
   if (g) g.clearRect(0, 0, W, H);
 }
 
@@ -218,6 +222,26 @@ async function undo() {
   await fb.remove(R(`callRooms/${st.rid}/board/${key}`)).catch(err => toast(errMsg(err)));
 }
 
+// Two-step confirm: first tap arms the button (red pulse), second tap within 3s clears.
+function onClearClick() {
+  if (!st.rid) return;
+  if (st.locked && !st.host) return toast("The host has locked the board");
+  if (!clearArmed) {
+    clearArmed = true;
+    $("#boardClear").classList.add("armed");
+    toast("Tap clear again to confirm");
+    clearTimeout(clearTimer);
+    clearTimer = setTimeout(disarmClear, 3000);
+    return;
+  }
+  disarmClear();
+  clearBoard();
+}
+function disarmClear() {
+  clearArmed = false;
+  clearTimeout(clearTimer);
+  $("#boardClear")?.classList.remove("armed");
+}
 async function clearBoard() {
   if (!st.rid) return;
   if (st.host) {
